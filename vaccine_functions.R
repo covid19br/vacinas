@@ -11,13 +11,16 @@ if(!require(scales)){install.packages("scales"); library(scales)}
 #' @estado: character. Sigla do estado do Brasil para leitura.
 #' @write.dose.types: logical. Se a função deve salvar uma tabela em .csv com as categorias
 #' presentes na coluna "vacina_descricao_dose"
-#' @output_folder: character. Caminho onde os dados devem ser salvos.
+#' @input_folder: character. Caminho para leitura de dados
+#' @output_folder: character. Caminho para escrever os dados.
 #' @data_base: character. Data da base de dados, no formato %Y-%m-%d
 
-prepare_table <- function(estado, write.dose.types = TRUE, output_folder = "dados/",
+prepare_table <- function(estado, write.dose.types = TRUE, 
+                          input_folder = "dados/",
+                          output_folder = "output/",
                           data_base = "2021-07-15") {
   
-  todas_vacinas <- fread(paste0("dados_brutos/dados_",data_base,"_",estado,".csv"), 
+  todas_vacinas <- fread(paste0(input_folder,data_base,"_",estado,".csv"), 
                          select = c("paciente_id", "paciente_datanascimento", 
                                     "vacina_categoria_codigo", "vacina_dataaplicacao", 
                                     "vacina_descricao_dose", "vacina_codigo"),
@@ -37,7 +40,7 @@ prepare_table <- function(estado, write.dose.types = TRUE, output_folder = "dado
   
   if(write.dose.types) {
     write.csv(data.frame(table(todas_vacinas$vacina_descricao_dose)), 
-              file = paste0(estado,"_dose_types_log.csv"), quote = FALSE, row.names = FALSE)
+              file = paste0(output_folder,estado,"_dose_types_log.csv"), quote = FALSE, row.names = FALSE)
   }
   
   # Substitute Dose names and transform into factor
@@ -92,8 +95,8 @@ prepare_table <- function(estado, write.dose.types = TRUE, output_folder = "dado
 
 prepara_historico <- function(estado, 
                               data_base = as.Date("2021-07-15"),
-                              input_folder = "dados/",
-                              output_folder = "dados/") {
+                              input_folder = "output/",
+                              output_folder = "output/") {
   
   if(class(data_base) == "character") data_base <- as.Date(data_base)
   
