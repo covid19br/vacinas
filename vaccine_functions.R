@@ -20,7 +20,7 @@ prepare_table <- function(estado, write.dose.types = TRUE,
                           output_folder = "output/",
                           data_base = "2021-07-15") {
   
-  todas_vacinas <- fread(paste0(input_folder,data_base,"_",estado,".csv"), 
+  todas_vacinas <- fread(paste0(input_folder,"dados_",data_base,"_",estado,".csv"), 
                          select = c("paciente_id", "paciente_datanascimento", 
                                     "vacina_categoria_codigo", "vacina_dataaplicacao", 
                                     "vacina_descricao_dose", "vacina_codigo"),
