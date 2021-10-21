@@ -8,8 +8,14 @@ import locale
 locale.setlocale(locale.LC_TIME, "pt_BR")
 
 def get_file(download_address, output_file):
-    r = requests.get(download_address, verify=False, allow_redirects=True, timeout=100)
-    open(output_file, 'wb').write(r.content)
+    r = requests.get(download_address, verify=False, allow_redirects=True,
+                     stream = True, timeout=100)
+    print(f"=== download size: {round(int(r.headers.get('content-length')) / (1024*1024))} M ===\n")
+    with open(output_file, 'wb') as f:
+        # 100M chunk size
+        chunk_size = 100 * 1024 * 1024
+        for chunk in r.iter_content(chunk_size=chunk_size):
+            f.write(chunk)
 
 def get_UF_file(index_page_address, UF, output_file):
     page = requests.get(index_page_address, verify=False, timeout=10)
@@ -59,6 +65,7 @@ if __name__ == '__main__':
         for UF in UFs:
             if UF not in estados:
                 print(f'\n   "{UF}" não é uma UF válida\n')
+            print(f'=== baixando base de {UF} ===\n')
             fname = f'dados_{data.strftime("%Y-%m-%d")}_{UF}.csv'
             output_file = os.path.join(output_folder, fname)
             get_UF_file(index_page_address, UF, output_file)
