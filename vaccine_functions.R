@@ -5,6 +5,23 @@ if(!require(wesanderson)){install.packages("wesanderson"); library(wesanderson)}
 if(!require(lubridate)){install.packages("lubridate"); library(lubridate)}
 if(!require(scales)){install.packages("scales"); library(scales)}
 
+
+doses_nomes <- function(x){
+  
+  if(grepl("Reforço|Adicional",x,ignore.case = T)){
+    return("R")
+  } 
+  if(grepl("1",x)){
+    return("D1")
+  }
+  if(grepl("2",x)){
+    return("D2")
+  }
+  return("DU")
+}
+
+
+
 #' prepare_table:
 #' Lê os arquivos brutos de dados do PNI-SI, seleciona apenas as colunas relevantes
 #' e realiza a limpeza e reorganização dos dados.
@@ -18,83 +35,158 @@ if(!require(scales)){install.packages("scales"); library(scales)}
 prepare_table <- function(estado, write.dose.types = TRUE, 
                           input_folder = "dados/",
                           output_folder = "output/",
-                          data_base = "2021-08-17") {
-  
-  todas_vacinas <- fread(paste0(input_folder,"limpo_dados_",data_base,"_",estado,".csv"), 
-                         select = c("paciente_id", "paciente_datanascimento", 
-                                    "vacina_categoria_codigo", "vacina_dataaplicacao", 
-                                    "vacina_descricao_dose", "vacina_codigo"),
-                         colClasses = c("paciente_id" = "factor",
-                                        "paciente_datanascimento" = "Date",
-                                        "vacina_categoria_codigo" = "integer",
-                                        "vacina_dataaplicacao" = "Date",
-                                        "vacina_descricao_dose" = "character",
-                                        "vacina_codigo" = "integer"), 
-                         encoding = "UTF-8")
-  
-  print("Data succesfully loaded")
-  print("Preparing data... 1")
-  
-  todas_vacinas$vacina_codigo[todas_vacinas$vacina_codigo == 89] <- 85
-  
-  todas_vacinas <- todas_vacinas %>% 
-    distinct(paciente_id,vacina_descricao_dose,.keep_all = TRUE) %>% 
-    distinct(paciente_id,vacina_dataaplicacao,.keep_all = TRUE)
-  
-  if(write.dose.types) {
-    write.csv(data.frame(table(todas_vacinas$vacina_descricao_dose)), 
-              file = paste0(output_folder,estado,"_dose_types_log.csv"), quote = FALSE, row.names = FALSE)
+                          data_base = "2021-08-17",split = F) {
+  if(split){
+    pattern <- paste0("split_sorted_limpo_dados_",data_base,"_",estado)
+    arquivos <- list.files(input_folder,pattern)
+    indice = 0
+    for(arquivo in arquivos){
+      todas_vacinas <- fread(paste0(input_folder,arquivo), 
+                             select = c("paciente_id", "paciente_datanascimento", "vacina_dataaplicacao", 
+                                        "vacina_descricao_dose", "vacina_codigo"),
+                             colClasses = c("paciente_id" = "factor",
+                                            "paciente_datanascimento" = "Date",
+                                            "vacina_dataaplicacao" = "Date",
+                                            "vacina_descricao_dose" = "character",
+                                            "vacina_codigo" = "integer"), 
+                             encoding = "UTF-8")
+      print("Data succesfully loaded")
+      print("Preparing data... 1")
+      indice = indice+1
+      todas_vacinas$vacina_codigo[todas_vacinas$vacina_codigo == 89] <- 85
+      
+      todas_vacinas <- todas_vacinas %>% 
+        distinct(paciente_id,vacina_descricao_dose,.keep_all = TRUE) %>% 
+        distinct(paciente_id,vacina_dataaplicacao,.keep_all = TRUE)
+      
+      if(write.dose.types) {
+        write.csv(data.frame(table(todas_vacinas$vacina_descricao_dose)), 
+                  file = paste0(output_folder,estado,"_dose_types_log.csv"), quote = FALSE, row.names = FALSE)
+      }
+      
+      # Substitute Dose names and transform into factor
+      #dose_types <- sort(unique(todas_vacinas$vacina_descricao_dose))
+      # load("nomes_doses.Rdata")
+      todas_vacinas$dose <- as.factor(sapply(todas_vacinas$vacina_descricao_dose,doses_nomes))
+      # todas_vacinas$dose
+      # todas_vacinas$vacina_descricao_dose[grepl(nomes_doses[1],todas_vacinas$vacina_descricao_dose)] <- "D1"
+      # todas_vacinas$vacina_descricao_dose[grepl(nomes_doses[2],todas_vacinas$vacina_descricao_dose)] <- "D2"
+      # todas_vacinas$vacina_descricao_dose[grepl(nomes_doses[3],todas_vacinas$vacina_descricao_dose) &
+                                            # todas_vacinas$vacina_codigo == 88] <- "DU"
+      # todas_vacinas$vacina_descricao_dose[grepl(nomes_doses[4],todas_vacinas$vacina_descricao_dose) &
+                                            # todas_vacinas$vacina_codigo == 88] <- "DU"
+      todas_vacinas <- todas_vacinas %>% filter(vacina_dataaplicacao < as.Date(data_base) & vacina_dataaplicacao > as.Date("2021-01-17"))
+      todas_vacinas <- todas_vacinas %>% drop_na()
+      todas_vacinas <- todas_vacinas %>% filter(paciente_datanascimento > "1900-01-01")
+      
+      ##
+      print("Preparing data... 2")
+      
+      ##########################
+      
+      tabela_vacinas <- todas_vacinas %>% filter(vacina_codigo %in% c(85,86,87,88)) %>% select(-vacina_descricao_dose) %>% as.data.frame()
+      rm(todas_vacinas);gc()
+      colnames(tabela_vacinas) <- c("id", "nasc", "data","vacina","doses")
+      
+      nreg <- tabela_vacinas %>% select(id) %>% group_by(id) %>% count() # Contar frequencia registros_id
+      tabela_vacinas <- tabela_vacinas %>% left_join(nreg, by = "id") %>% filter(n <= 3) %>% mutate(id = factor(id)) # Cortar ids com mais de 2 registros
+      
+      rm(nreg);gc()
+      
+      # Filter if it has more than one D1 or D2 per ID
+      remove_ids <- tabela_vacinas %>% group_by(id, doses, .drop = FALSE) %>% summarise(m = n()) %>% filter(m > 1)
+      tabela_vacinas = tabela_vacinas %>% filter(!(id %in% remove_ids$id)) %>% mutate(id = droplevels(id))
+      
+      rm(remove_ids);gc()
+      
+      age <- tabela_vacinas %>%
+        filter(doses == "D1" | doses == "DU") %>% mutate(idade = floor(time_length(data - nasc, "years"))) %>%
+        select(id,idade)
+      tabela_vacinas <- tabela_vacinas %>% left_join(age, by = "id") %>% select(-nasc)
+      # tabela_vacinas$complete_d1 <- tabela_vacinas$data + 14 < as.Date(data_base) & 
+      #   (tabela_vacinas$doses == levels(tabela_vacinas$doses)[1] |
+      #      tabela_vacinas$doses == levels(tabela_vacinas$doses)[3])
+      # tabela_vacinas$complete <- tabela_vacinas$data + 14 < as.Date(data_base) & 
+      #   (tabela_vacinas$doses == levels(tabela_vacinas$doses)[2] |
+      #      tabela_vacinas$doses == levels(tabela_vacinas$doses)[3])
+      print("Saving data")
+      
+      write_csv(tabela_vacinas, file = paste0(output_folder, estado,"_",indice, "_PNI_clean.csv"), quote = FALSE)
+    }
+  } else {
+    todas_vacinas <- fread(paste0(input_folder,"limpo_dados_",data_base,"_",estado,".csv"), 
+                           select = c("paciente_id", "paciente_datanascimento", "vacina_dataaplicacao", 
+                                      "vacina_descricao_dose", "vacina_codigo"),
+                           colClasses = c("paciente_id" = "factor",
+                                          "paciente_datanascimento" = "Date",
+                                          "vacina_dataaplicacao" = "Date",
+                                          "vacina_descricao_dose" = "character",
+                                          "vacina_codigo" = "integer"), 
+                           encoding = "UTF-8")
+    
+    print("Data succesfully loaded")
+    print("Preparing data... 1")
+    
+    todas_vacinas$vacina_codigo[todas_vacinas$vacina_codigo == 89] <- 85
+    
+    todas_vacinas <- todas_vacinas %>% 
+      distinct(paciente_id,vacina_descricao_dose,.keep_all = TRUE) %>% 
+      distinct(paciente_id,vacina_dataaplicacao,.keep_all = TRUE)
+    
+    if(write.dose.types) {
+      write.csv(data.frame(table(todas_vacinas$vacina_descricao_dose)), 
+                file = paste0(output_folder,estado,"_dose_types_log.csv"), quote = FALSE, row.names = FALSE)
+    }
+    
+    # Substitute Dose names and transform into factor
+    #dose_types <- sort(unique(todas_vacinas$vacina_descricao_dose))
+    # load("nomes_doses.Rdata")
+    todas_vacinas$dose <- as.factor(sapply(todas_vacinas$vacina_descricao_dose,doses_nomes))
+    # todas_vacinas$dose
+    # todas_vacinas$vacina_descricao_dose[grepl(nomes_doses[1],todas_vacinas$vacina_descricao_dose)] <- "D1"
+    # todas_vacinas$vacina_descricao_dose[grepl(nomes_doses[2],todas_vacinas$vacina_descricao_dose)] <- "D2"
+    # todas_vacinas$vacina_descricao_dose[grepl(nomes_doses[3],todas_vacinas$vacina_descricao_dose) &
+    # todas_vacinas$vacina_codigo == 88] <- "DU"
+    # todas_vacinas$vacina_descricao_dose[grepl(nomes_doses[4],todas_vacinas$vacina_descricao_dose) &
+    # todas_vacinas$vacina_codigo == 88] <- "DU"
+    todas_vacinas <- todas_vacinas %>% filter(vacina_dataaplicacao < as.Date(data_base) & vacina_dataaplicacao > as.Date("2021-01-17"))
+    todas_vacinas <- todas_vacinas %>% drop_na()
+    todas_vacinas <- todas_vacinas %>% filter(paciente_datanascimento > "1900-01-01")
+    
+    ##
+    print("Preparing data... 2")
+    
+    ##########################
+    
+    tabela_vacinas <- todas_vacinas %>% filter(vacina_codigo %in% c(85,86,87,88)) %>% select(-vacina_descricao_dose) %>% as.data.frame()
+    rm(todas_vacinas);gc()
+    colnames(tabela_vacinas) <- c("id", "nasc", "data","vacina","doses")
+    
+    nreg <- tabela_vacinas %>% select(id) %>% group_by(id) %>% count() # Contar frequencia registros_id
+    tabela_vacinas <- tabela_vacinas %>% left_join(nreg, by = "id") %>% filter(n <= 3) %>% mutate(id = factor(id)) # Cortar ids com mais de 2 registros
+    
+    rm(nreg);gc()
+    
+    # Filter if it has more than one D1 or D2 per ID
+    remove_ids <- tabela_vacinas %>% group_by(id, doses, .drop = FALSE) %>% summarise(m = n()) %>% filter(m > 1)
+    tabela_vacinas = tabela_vacinas %>% filter(!(id %in% remove_ids$id)) %>% mutate(id = droplevels(id))
+    
+    rm(remove_ids);gc()
+    
+    age <- tabela_vacinas %>%
+      filter(doses == "D1" | doses == "DU") %>% mutate(idade = floor(time_length(data - nasc, "years"))) %>%
+      select(id,idade)
+    tabela_vacinas <- tabela_vacinas %>% left_join(age, by = "id") %>% select(-nasc)
+    # tabela_vacinas$complete_d1 <- tabela_vacinas$data + 14 < as.Date(data_base) & 
+    #   (tabela_vacinas$doses == levels(tabela_vacinas$doses)[1] |
+    #      tabela_vacinas$doses == levels(tabela_vacinas$doses)[3])
+    # tabela_vacinas$complete <- tabela_vacinas$data + 14 < as.Date(data_base) & 
+    #   (tabela_vacinas$doses == levels(tabela_vacinas$doses)[2] |
+    #      tabela_vacinas$doses == levels(tabela_vacinas$doses)[3])
+    print("Saving data")
+    
+    write_csv(tabela_vacinas, file = paste0(output_folder, estado, "_PNI_clean.csv"),  quote = FALSE)
   }
-  
-  # Substitute Dose names and transform into factor
-  #dose_types <- sort(unique(todas_vacinas$vacina_descricao_dose))
-  load("nomes_doses.Rdata")
-  todas_vacinas$vacina_descricao_dose[grep(nomes_doses[1],todas_vacinas$vacina_descricao_dose)] <- "D1"
-  todas_vacinas$vacina_descricao_dose[grep(nomes_doses[2],todas_vacinas$vacina_descricao_dose)] <- "D2"
-  todas_vacinas$vacina_descricao_dose[grep(nomes_doses[3],todas_vacinas$vacina_descricao_dose) &
-                                        todas_vacinas$vacina_codigo == 88] <- "DU"
-  todas_vacinas$vacina_descricao_dose[grep(nomes_doses[4],todas_vacinas$vacina_descricao_dose) &
-                                        todas_vacinas$vacina_codigo == 88] <- "DU"
-  
-  todas_vacinas$doses <- factor(todas_vacinas$vacina_descricao_dose)
-  
-  todas_vacinas <- todas_vacinas %>% filter(vacina_dataaplicacao < as.Date(data_base) & vacina_dataaplicacao > as.Date("2021-01-17"))
-  todas_vacinas <- todas_vacinas %>% drop_na(-vacina_categoria_codigo)
-  todas_vacinas <- todas_vacinas %>% filter(paciente_datanascimento > "1900-01-01")
-  
-  ##
-  print("Preparing data... 2")
-  
-  ##########################
-  
-  tabela_vacinas <- todas_vacinas %>% filter(vacina_codigo %in% c(85,86,87,88)) %>% select(-vacina_descricao_dose) %>% as.data.frame()
-  rm(todas_vacinas);gc()
-  colnames(tabela_vacinas) <- c("id", "nasc", "categoria", "data","vacina","doses")
-  
-  nreg <- tabela_vacinas %>% select(id) %>% group_by(id) %>% count() # Contar frequencia registros_id
-  tabela_vacinas <- tabela_vacinas %>% left_join(nreg, by = "id") %>% filter(n < 3) %>% mutate(id = factor(id)) # Cortar ids com mais de 2 registros
-  
-  rm(nreg);gc()
-  
-  # Filter if it has more than one D1 or D2 per ID
-  remove_ids <- tabela_vacinas %>% group_by(id, doses, .drop = FALSE) %>% summarise(m = n()) %>% filter(m > 1)
-  tabela_vacinas = tabela_vacinas %>% filter(!(id %in% remove_ids$id)) %>% mutate(id = droplevels(id))
-  
-  rm(remove_ids);gc()
-  
-  age <- tabela_vacinas %>%
-    filter(doses == "D1" | doses == "DU") %>% mutate(idade = floor(time_length(data - nasc, "years"))) %>%
-    select(id,idade)
-  tabela_vacinas <- tabela_vacinas %>% left_join(age, by = "id") %>% select(-nasc)
-  tabela_vacinas$complete_d1 <- tabela_vacinas$data + 14 < as.Date(data_base) & 
-    (tabela_vacinas$doses == levels(tabela_vacinas$doses)[1] |
-     tabela_vacinas$doses == levels(tabela_vacinas$doses)[3])
-  tabela_vacinas$complete <- tabela_vacinas$data + 14 < as.Date(data_base) & 
-    (tabela_vacinas$doses == levels(tabela_vacinas$doses)[2] |
-       tabela_vacinas$doses == levels(tabela_vacinas$doses)[3])
-  print("Saving data")
-  
-  write.csv(tabela_vacinas, file = paste0(output_folder, estado, "_PNI_clean.csv"), row.names = FALSE, quote = FALSE)
 }
 
 #' prepara_historico:
@@ -120,98 +212,27 @@ prepara_historico <- function(estado,
   if(class(data_base) == "character") data_base <- as.Date(data_base)
   
   tabela_vacinas <- fread(paste0(input_folder,estado, "_PNI_clean.csv"), 
-                          colClasses = c("id" = "factor", "categoria" = "integer", 
-                                         "data" = "Date", "vacina" = "integer", "n" = "integer",
+                          colClasses = c("id" = "factor",
+                                         "data" = "Date", "vacina" = "integer","n" = "integer",
                                          "doses" = "factor","idade" = "integer"), encoding = "UTF-8")
   
   count_doses <- tabela_vacinas %>% group_by(id) %>% summarise(m = n())
   tabela_vacinas <- tabela_vacinas %>% left_join(count_doses, by = "id")
   
-  tabela_D1 <- tabela_vacinas %>% select(-id,-categoria) %>% 
-    filter((doses %in% c("D1","DU")) & n == 1) %>%
+  tabela <- tabela_vacinas %>% select(-id) %>% 
     filter(data > "2021-01-01") %>%
     filter(data <= data_base) %>%
     drop_na(vacina, idade, data, doses) %>%
-    mutate(tempo_doses = as.numeric(data_base - data),
-           vacina = factor(vacina, levels = c(85,86,87,88), labels = c("AZ","Coronavac","Pfizer","Janssen")),
+    mutate(vacina = factor(vacina, levels = c(85,86,87,88), labels = c("AZ","Coronavac","Pfizer","Janssen")),
            agegroup = cut(idade, 
                           breaks = c(seq(0,90,10),Inf), 
                           include.lowest = T, 
                           right = F, 
                           labels = F)) %>%
-    mutate(agegroup = factor(agegroup),
-           tempo_doses = factor(tempo_doses)) %>%
-    count(vacina, agegroup, data, .drop = FALSE)
+    mutate(agegroup = factor(agegroup)) %>%
+    count(vacina, agegroup, data,doses, .drop = FALSE)
   
-  write.csv(tabela_D1, file= paste0(output_folder,"historico_D1_",estado,".csv"), row.names = FALSE, quote = FALSE)
-  
-  tabela_D1_complete <- tabela_vacinas %>% select(-id,-categoria) %>% 
-    filter(doses %in% c("D1","DU")) %>%
-    filter(complete_d1 == TRUE) %>%
-    filter(data > "2021-01-01") %>%
-    filter(data <= data_base) %>%
-    drop_na(vacina, idade, data, doses) %>%
-    mutate(tempo_doses = as.numeric(data_base - data),
-           vacina = factor(vacina, levels = c(85,86,87,88), labels = c("AZ","Coronavac","Pfizer","Janssen")),
-           agegroup = cut(idade, 
-                          breaks = c(seq(0,90,10),Inf), 
-                          include.lowest = T, 
-                          right = F, 
-                          labels = F)) %>%
-    count(vacina, agegroup, data, .drop = FALSE)
-  
-  write.csv(tabela_D1_complete, file= paste0(output_folder,"historico_D1_complete_",estado,".csv"), row.names = FALSE, quote = FALSE)
-  
-  tabela_so_D1_complete <- tabela_vacinas %>% select(-id,-categoria) %>% 
-    filter(doses %in% c("D1","DU") & m == 1) %>%
-    filter(complete_d1 == TRUE) %>%
-    filter(data > "2021-01-01") %>%
-    filter(data <= data_base) %>%
-    drop_na(vacina, idade, data, doses) %>%
-    mutate(tempo_doses = as.numeric(data_base - data),
-           vacina = factor(vacina, levels = c(85,86,87,88), labels = c("AZ","Coronavac","Pfizer","Janssen")),
-           agegroup = cut(idade, 
-                          breaks = c(seq(0,90,10),Inf), 
-                          include.lowest = T, 
-                          right = F, 
-                          labels = F)) %>%
-    count(vacina, agegroup, data, .drop = FALSE)
-  
-  write.csv(tabela_so_D1_complete, file= paste0(output_folder,"historico_so_D1_complete_",estado,".csv"), row.names = FALSE, quote = FALSE)  
-  
-  tabela_D2 <- tabela_vacinas %>% select(-id,-categoria) %>% 
-    filter(doses %in% c("D2","2ª Dose","DU")) %>%
-    filter(data > "2021-01-01") %>%
-    filter(data <= data_base) %>%
-    drop_na(vacina, idade, data, doses) %>%
-    mutate(tempo_doses = as.numeric(data_base - data),
-           vacina = factor(vacina, levels = c(85,86,87,88), labels = c("AZ","Coronavac","Pfizer","Janssen")),
-           agegroup = cut(idade, 
-                          breaks = c(seq(0,90,10),Inf), 
-                          include.lowest = T, 
-                          right = F, 
-                          labels = F)) %>%
-    count(vacina, agegroup, data, .drop = FALSE)
-  
-  write.csv(tabela_D2, file= paste0(output_folder,"historico_D2_",estado,".csv"), row.names = FALSE, quote = FALSE)
-  
-  tabela_D2_complete <- tabela_vacinas %>% select(-id,-categoria) %>% 
-    filter(doses %in% c("D2","2ª Dose","DU")) %>%
-    filter(complete == TRUE) %>%
-    filter(data > "2021-01-01") %>%
-    filter(data <= data_base) %>%
-    drop_na(vacina, idade, data, doses) %>%
-    mutate(tempo_doses = as.numeric(data_base - data),
-           vacina = factor(vacina, levels = c(85,86,87,88), labels = c("AZ","Coronavac","Pfizer","Janssen")),
-           agegroup = cut(idade, 
-                          breaks = c(seq(0,90,10),Inf), 
-                          include.lowest = T, 
-                          right = F, 
-                          labels = F)) %>%
-    count(vacina, agegroup, data, .drop = FALSE)
-  
-  write.csv(tabela_D2_complete, file= paste0(output_folder,"historico_D2_complete_",estado,".csv"), row.names = FALSE, quote = FALSE)
-  
+  write.csv(tabela, file= paste0(output_folder,"doses_aplicadas_",estado,".csv"), row.names = FALSE, quote = FALSE)
 }
 
 #' plot_historico

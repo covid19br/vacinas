@@ -5,7 +5,7 @@ from lxml import html
 import requests 
 import re
 import locale
-locale.setlocale(locale.LC_TIME, "pt_BR")
+locale.setlocale(locale.LC_TIME, "pt_BR.UTF-8")
 
 def get_file(download_address, output_file):
     r = requests.get(download_address, verify=False, allow_redirects=True, timeout=100)
