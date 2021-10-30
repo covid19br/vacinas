@@ -3,6 +3,11 @@
 #######baixar base atualizada #####pode demorar
 python3 sipni_downloader.py todas
 
+if [ $? -ne 0 ]; then
+    echo "erro ao baixar bases SI-PNI"
+    exit 1
+fi
+
 #######limpa base
 dir=$(pwd)
 cd dados/ || exit
