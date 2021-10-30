@@ -111,7 +111,7 @@ prepare_table <- function(estado, write.dose.types = TRUE,
       #      tabela_vacinas$doses == levels(tabela_vacinas$doses)[3])
       print("Saving data")
       
-      write_csv(tabela_vacinas, file = paste0(output_folder, estado,"_",indice, "_PNI_clean.csv"), quote = FALSE)
+      write_csv(tabela_vacinas, file = paste0(output_folder, estado,"_",indice, "_PNI_clean.csv"))
     }
   } else {
     todas_vacinas <- fread(paste0(input_folder,"limpo_dados_",data_base,"_",estado,".csv"), 
@@ -185,7 +185,7 @@ prepare_table <- function(estado, write.dose.types = TRUE,
     #      tabela_vacinas$doses == levels(tabela_vacinas$doses)[3])
     print("Saving data")
     
-    write_csv(tabela_vacinas, file = paste0(output_folder, estado, "_PNI_clean.csv"),  quote = FALSE)
+    write_csv(tabela_vacinas, file = paste0(output_folder, estado, "_PNI_clean.csv"))
   }
 }
 
@@ -232,7 +232,7 @@ prepara_historico <- function(estado,
     mutate(agegroup = factor(agegroup)) %>%
     count(vacina, agegroup, data,doses, .drop = FALSE)
   
-  write.csv(tabela, file= paste0(output_folder,"doses_aplicadas_",estado,".csv"), row.names = FALSE, quote = FALSE)
+  write_csv(tabela, file= paste0(output_folder,"doses_aplicadas_",estado,".csv"))
 }
 
 #' plot_historico
