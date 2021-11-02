@@ -38,6 +38,9 @@ vignettes/*.pdf
 # R Environment Variables
 .Renviron
 
+# vim temp files
+.*.swp
+
 # data files
 dados/*dados_*.csv
 /output/
