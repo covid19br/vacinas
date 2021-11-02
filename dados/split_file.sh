@@ -1,5 +1,11 @@
 #!/usr/bin/bash
 
+if [ "$#" -gt 2 ]; then
+    echo "ERRO: excesso de argumentos: "
+    echo "$@"
+    exit 1
+fi
+
 f=$1
 n=$2
 suffix=".csv"
