@@ -51,10 +51,11 @@ for estado in "${estados_split[@]}"; do
     echo "done"
 
     echo "spliting state ${estado} in $PWD folder"
-    ### BUG: assume que a wildcard "sorted_limpo_dados*${estado}.csv"
-    # corresponde a um único arquivo
-    ./split_file.sh sorted_limpo_dados*${estado}.csv 4
-    rm "sorted_limpo_dados*${estado}.csv"
+    ## BUG: assume que a wildcard "sorted_limpo_dados*${estado}.csv" corresponde
+    ## a um único arquivo - se não for o caso, programa sai com erro
+    ./split_file.sh sorted_limpo_dados*${estado}.csv 4 &&
+        rm "sorted_limpo_dados*${estado}.csv" ||
+        { echo "erro! saindo..."; exit 1 ; }
     echo "done"
     popd
 
