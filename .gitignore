@@ -42,5 +42,6 @@ vignettes/*.pdf
 .*.swp
 
 # data files
-dados/*dados_*.csv
+/dados/*dados_*.csv
+/dados/split_sorted_limpo_dados*.csv
 /output/
