@@ -51,8 +51,10 @@ for estado in "${estados_split[@]}"; do
     echo "done"
 
     echo "spliting state ${estado} in $PWD folder"
-    ./split_file.sh sorted_limpo_dados*"$estado".csv 4
-    rm sorted_limpo_dados*"$estado".csv
+    ### BUG: assume que a wildcard "sorted_limpo_dados*${estado}.csv"
+    # corresponde a um único arquivo
+    ./split_file.sh "sorted_limpo_dados*${estado}.csv" 4
+    rm "sorted_limpo_dados*${estado}.csv"
     echo "done"
     popd
 
@@ -78,6 +80,9 @@ done
 cd "$dir"
 
 echo "Processing finished"
+
+echo "Cleaning up"
+rm -v dados/dados_*.csv dados/limpo_dados_*.csv dados/sorted_limpo_dados_*.csv dados/split_sorted_limpo_dados_*.csv
 
 if [ $GIT_UPDATE -eq 1 ]; then
     for estado in "${estados[@]}" "${estados_split[@]}"; do

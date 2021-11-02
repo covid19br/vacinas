@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 
 f=$1
 n=$2
