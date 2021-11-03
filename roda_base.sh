@@ -61,7 +61,7 @@ for estado in "${estados_split[@]}"; do
 
     echo "cleaning data for state ${estado} in $PWD folder"
     Rscript prepara_dado_split.R "$estado"
-    rm split_sorted_limpo_dados*"$estado"_*.csv
+    rm dados/split_sorted_limpo_dados*"$estado"_*.csv
     echo "done"
 
     pushd output/
@@ -78,12 +78,11 @@ for estado in "${estados_split[@]}"; do
     Rscript prepara_cobertura.R "$estado"
     echo "done"
 done
-cd "$dir"
 
 echo "Processing finished"
 
 echo "Cleaning up"
-rm -v dados/dados_*.csv dados/limpo_dados_*.csv dados/sorted_limpo_dados_*.csv dados/split_sorted_limpo_dados_*.csv
+rm -v dados/dados_*.csv dados/sorted_limpo_dados_*.csv
 
 if [ $GIT_UPDATE -eq 1 ]; then
     for estado in "${estados[@]}" "${estados_split[@]}"; do
