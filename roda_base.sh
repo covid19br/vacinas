@@ -75,7 +75,8 @@ for estado in "${estados_split[@]}"; do
     popd
 
     echo "generating number of doses for state ${estado} in $PWD folder"
-    Rscript prepara_cobertura.R "$estado"
+    Rscript prepara_cobertura.R "$estado" &&
+        rm output/${estado}_PNI_clean.csv
     echo "done"
 done
 
