@@ -35,8 +35,9 @@ popd
 estados=("AC" "AL" "AM" "AP" "BA" "CE" "DF" "ES" "GO" "MA" "MG" "MS" "MT" "PA" "PB" "PE" "PI" "PR" "RJ" "RN" "RO" "RR" "RS" "SC" "SE" "TO")
 echo "preparing data for states that doesn't split"
 for estado in "${estados[@]}"; do
-    Rscript prepara_dado.R "$estado"
-    Rscript prepara_cobertura.R "$estado"
+    Rscript prepara_dado.R "$estado" &&
+        Rscript prepara_cobertura.R "$estado" &&
+        rm output/${estado}_PNI_clean.csv
     echo "state ${estado} done"
 done
 
