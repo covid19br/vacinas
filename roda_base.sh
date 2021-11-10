@@ -84,7 +84,7 @@ done
 echo "Processing finished"
 
 echo "Cleaning up"
-rm -v dados/dados_*.csv dados/sorted_limpo_dados_*.csv
+rm -v dados/dados_*.csv dados/limpo_dados_*.csv
 
 if [ $GIT_UPDATE -eq 1 ]; then
     for estado in "${estados[@]}" "${estados_split[@]}"; do
