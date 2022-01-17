@@ -5,7 +5,6 @@ if(!require(wesanderson)){install.packages("wesanderson"); library(wesanderson)}
 if(!require(lubridate)){install.packages("lubridate"); library(lubridate)}
 if(!require(scales)){install.packages("scales"); library(scales)}
 
-
 doses_nomes <- function(x){
   
   if(grepl("Reforço|Adicional",x,ignore.case = T)){
@@ -225,9 +224,10 @@ prepara_historico <- function(estado,
     drop_na(vacina, idade, data, doses) %>%
     mutate(vacina = factor(vacina, levels = c(85,86,87,88), labels = c("AZ","Coronavac","Pfizer","Janssen")),
            agegroup = cut(idade, 
-                          breaks = c(seq(0,90,10),Inf), 
+                          breaks = c(0,5,12,18,seq(30,90,10),Inf),
+                          #breaks = c(seq(0,90,10),Inf), 
                           include.lowest = T, 
-                          right = F, 
+                          right = F,
                           labels = F)) %>%
     mutate(agegroup = factor(agegroup)) %>%
     count(vacina, agegroup, data,doses, .drop = FALSE)
@@ -256,7 +256,9 @@ plot_historico <- function(tabela_dose, vacina_nome = "AZ",
   
   if(vacina == "AZ") {nome_vacina <- "Astrazeneca"} else {nome_vacina <- vacina}
   print(vacina)
-  age_labels <-  levels(cut(1:100, breaks = c(seq(0,90,10),Inf), 
+  age_labels <-  levels(cut(1:100, 
+                            breaks = c(0,5,12,18,seq(30,90,10),Inf),
+                          #  breaks = c(seq(0,90,10),Inf), 
                             include.lowest = T, right = F))
   
   max_time <- max(as.numeric(tabela_dose$tempo_doses))
