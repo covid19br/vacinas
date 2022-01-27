@@ -1,5 +1,3 @@
-setwd("C:/Users/morde/Documents/GitHub/vacinas")
-
 require(tidyverse)
 require(geofacet)
 
@@ -60,7 +58,8 @@ gd1 <- d1 %>%
   labs(title = "Cobertura de Dose 1",
        caption = "Fonte: SI-PNI em 15 de janeiro de 2022.\nEstimativas populacionais das faixas etárias de 5 a 29 anos são aproximadas")
 #gd1
-ggsave(gd1, file = "dose_1.pdf", width = 15, height = 10)
+ggsave(gd1, file = "figuras/dose_1.pdf", width = 15, height = 10)
+ggsave(gd1, file = "figuras/dose_1.png", width = 15, height = 10, dpi = 200)
 
 ### DOSE 2
 
@@ -91,8 +90,8 @@ gd2 <- d2 %>%
   labs(title = "Cobertura de Dose 2",
        caption = "Fonte: SI-PNI em 15 de janeiro de 2022.\nEstimativas populacionais das faixas etárias de 5 a 29 anos são aproximadas")
 #gd2
-ggsave(gd2, file = "dose_2.pdf", width = 15, height = 10)
-
+ggsave(gd2, file = "figuras/dose_2.pdf", width = 15, height = 10)
+ggsave(gd2, file = "figuras/dose_2.png", width = 15, height = 10, dpi = 200)
 
 ### DOSE REFORÇO
 
@@ -123,4 +122,5 @@ gdr <- dr %>%
   labs(title = "Cobertura de doses de reforço",
        caption = "Fonte: SI-PNI em 15 de janeiro de 2022.\nEstimativas populacionais das faixas etárias de 5 a 29 anos são aproximadas")
 #gdr
-ggsave(gdr, file = "dose_reforco.pdf", width = 15, height = 10)
+ggsave(gdr, file = "figuras/dose_reforco.pdf", width = 15, height = 10)
+ggsave(gdr, file = "figuras/dose_reforco.png", width = 15, height = 10, dpi = 200)
