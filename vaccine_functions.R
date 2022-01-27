@@ -207,7 +207,7 @@ prepara_historico <- function(estado = "SP",
                               data_base = as.Date("2022-01-15"),
                               input_folder = "output/",
                               output_folder = "output/",
-                              split = T) {
+                              split = FALSE) {
   
   if(class(data_base) == "character") data_base <- as.Date(data_base)
   

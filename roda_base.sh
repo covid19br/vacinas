@@ -60,31 +60,32 @@ for estado in "${estados_split[@]}"; do
     echo "done"
     popd
 
-    echo "cleaning data for state ${estado} in $PWD folder"
-    Rscript prepara_dado_split.R "$estado"
-    rm dados/split_sorted_limpo_dados*"$estado"_*.csv
-    echo "done"
-
-    pushd output/
-    echo "aggregating data in single file for state ${estado} in $PWD folder"
-    head -n 1 "$estado"_1_PNI_clean.csv > "$estado"_PNI_clean.csv
-    for i in 1 2 3 4; do
-        tail -n +2 "$estado"_"${i}"_PNI_clean.csv >> "$estado"_PNI_clean.csv
-        rm "$estado"_"$i"_PNI_clean.csv
-    done
-    echo "done"
-    popd
+    #pushd output/
+    #echo "aggregating data in single file for state ${estado} in $PWD folder"
+    #head -n 1 "$estado"_1_PNI_clean.csv > "$estado"_PNI_clean.csv
+    #for i in 1 2 3 4; do
+    #    tail -n +2 "$estado"_"${i}"_PNI_clean.csv >> "$estado"_PNI_clean.csv
+    #    rm "$estado"_"$i"_PNI_clean.csv
+    #done
+    #echo "done"
+    #popd
 
     echo "generating number of doses for state ${estado} in $PWD folder"
     Rscript prepara_cobertura.R "$estado" &&
         rm output/${estado}_PNI_clean.csv
     echo "done"
+
+    echo "cleaning data for state ${estado} in $PWD folder"
+    Rscript prepara_dado_split.R "$estado"
+    rm dados/split_sorted_limpo_dados*"$estado"_*.csv
+    echo "done"
+
 done
 
 echo "Processing finished"
 
 echo "Cleaning up"
-rm -v dados/dados_*.csv dados/limpo_dados_*.csv
+#rm -v dados/dados_*.csv dados/limpo_dados_*.csv
 
 if [ $GIT_UPDATE -eq 1 ]; then
     for estado in "${estados[@]}" "${estados_split[@]}"; do
