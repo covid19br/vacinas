@@ -29,7 +29,7 @@ doses_nomes <- function(x){
 #' @output_folder: character. Caminho para escrever os dados.
 #' @data_base: character. Data da base de dados, no formato %Y-%m-%d
 
-prepare_table <- function(estado, write.dose.types = TRUE, 
+prepare_table <- function(estado, write.dose.types = TRUE,
                           input_folder = "dados/",
                           output_folder = "output/",
                           data_base = "2022-01-15",split = F) {
@@ -108,10 +108,9 @@ prepare_table <- function(estado, write.dose.types = TRUE,
       #      tabela_vacinas$doses == levels(tabela_vacinas$doses)[3])
       print("Saving data")
       
-      write_csv(tabela_vacinas, file = paste0(output_folder, estado,"_",indice, "_PNI_clean.csv"))
+      fwrite(tabela_vacinas, file = paste0(output_folder, estado,"_",indice, "_PNI_clean.csv"))
     }
   } else {
-    colnames(todas_vacinas)
     todas_vacinas <- fread(paste0(input_folder,"limpo_dados_",data_base,"_",estado,".csv"), 
                            select = c("paciente_id", "paciente_dataNascimento", "vacina_dataAplicacao", 
                                       "vacina_descricao_dose", "vacina_codigo"),
@@ -183,7 +182,9 @@ prepare_table <- function(estado, write.dose.types = TRUE,
     #      tabela_vacinas$doses == levels(tabela_vacinas$doses)[3])
     print("Saving data")
     
-    write_csv(tabela_vacinas, file = paste0(output_folder, estado, "_PNI_clean.csv"))
+    filename = paste0(output_folder, estado, "_PNI_clean.csv")
+    print(paste0("Salvando: ", filename))
+    fwrite(tabela_vacinas, file = filename)
   }
 }
 
@@ -202,17 +203,33 @@ prepare_table <- function(estado, write.dose.types = TRUE,
 #' 
 #' Details: a função salva as tabelas de output em um arquivo .csv
 
-prepara_historico <- function(estado, 
+prepara_historico <- function(estado = "SP", 
                               data_base = as.Date("2022-01-15"),
                               input_folder = "output/",
-                              output_folder = "output/") {
+                              output_folder = "output/",
+                              split = T) {
   
   if(class(data_base) == "character") data_base <- as.Date(data_base)
   
-  tabela_vacinas <- fread(paste0(input_folder,estado, "_PNI_clean.csv"), 
+  if(split) {
+   
+ # if(!require(doParallel)){install.packages("doParallel"); library(doParallel)}
+  #registerDoParallel(cores=detectCores()-1)
+    
+  splited_files <- grep("[1-9]_PNI_clean.csv", list.files(input_folder), value = T)
+  files <- grep(estado, splited_files, value = T)
+  
+  #tabela_wide = tibble()
+  
+  for(j in 1:length(files)) {
+  print(files[j])
+    
+  tabela_vacinas <- fread(paste0(input_folder,files[j]), 
                           colClasses = c("id" = "factor",
-                                         "data" = "Date", "vacina" = "integer","n" = "integer",
+                                         "data" = "character", "vacina" = "integer","n" = "integer",
                                          "doses" = "factor","idade" = "integer"), encoding = "UTF-8")
+  
+  tabela_vacinas$data <- as.Date(tabela_vacinas$data)
   
   count_doses <- tabela_vacinas %>% group_by(id) %>% summarise(m = n())
   tabela_vacinas <- tabela_vacinas %>% left_join(count_doses, by = "id")
@@ -222,43 +239,223 @@ prepara_historico <- function(estado,
     filter(data <= data_base) %>%
     drop_na(vacina, idade, data, doses) %>%
     mutate(vacina = factor(vacina, levels = c(85,86,87,88), labels = c("AZ","Coronavac","Pfizer","Janssen")),
-           agegroup = cut(idade, 
+           agegroup = factor(cut(idade, 
                           breaks = c(0,5,12,18,seq(30,90,10),Inf),
                           #breaks = c(seq(0,90,10),Inf), 
                           include.lowest = T, 
                           right = F,
-                          labels = F)) %>%
-  mutate(agegroup = factor(agegroup))
+                          labels = F)))
 
-  pretabela %>% count(vacina, agegroup, data,doses, .drop = FALSE)
+  #rm(tabela_vacinas);gc()
   
-  write_csv(tabela, file= paste0(output_folder,"doses_aplicadas_",estado,".csv"))
+  tabela <- pretabela %>% count(vacina, agegroup, data,doses, .drop = FALSE)
+  filename = paste0(output_folder,"doses_aplicadas/doses_aplicadas_",estado,"_",j,".csv")
+  print(filename)
+  fwrite(tabela, file= filename)
   
-  ###
+  ### Preparar tabela em formato wide
+  
   tabela_id_idade <- pretabela %>% select(id, agegroup) %>% distinct()
+  print(259)
   
+    cut_points <- as.integer(c(seq(1,  nrow(pretabela), 3*10^6), nrow(pretabela)))
+  #cut_points <- as.integer(c(seq(1,  9*10^6, 3*10^6), nrow(pretabela)))
+  
+    ini = Sys.time()
+    
+    #tabela_wide_split <- foreach(i = 1:(length(cut_points)-1),.combine = bind_rows) %dopar% {
+    tabela_wide_split = tibble()
+    
+    for(i in 1:(length(cut_points)-1)){
+      
+      print(c(i,j,cut_points[i]))
+      
+      tabela_wide_split_temp <- pretabela[cut_points[i]:(cut_points[i+1]-1),] %>%
+        select(-agegroup, -idade) %>%
+        pivot_wider(id_cols = id,
+                    names_from = doses,
+                    values_from = c(data, vacina),
+                    values_fn = first,
+                    values_fill = NA)
+      
+      tabela_wide_split <- bind_rows(tabela_wide_split, tabela_wide_split_temp)
+    }
+    
+  tabela_wide_split = tabela_wide_split %>%
+    right_join(tabela_id_idade, by = "id", na_matches = "never") %>% select(-id)
+  
+  fin = Sys.time()
+  print(fin - ini)
+  
+  rm(pretabela);gc()
+  
+  filename = paste0(output_folder,"wide/wide_doses_aplicadas_",estado,"_",j,".csv")
+  print(paste0("Salvando: ",filename))
+  fwrite(tabela_wide_split, file = filename)
+  
+  reforco <- tabela_wide_split %>%
+    filter(!is.na(data_D2) & is.na(data_R) & is.na(vacina_DU)) %>%
+    count(data_D2, vacina_D2, agegroup)
+  print(298)
+  reforco <- reforco %>% mutate(dif = as.integer(as.Date(Sys.time()) - data_D2)) %>% select(-n)
+  print(300)
+  filename = paste0(output_folder,"reforco/tempo_d2_reforco_",estado,"_",j,".csv")
+  print(paste0("Salvando: ",filename))
+  fwrite(reforco, file= filename)
+  
+   } #j
+    
+  } else {
+  
+  tabela_vacinas <- fread(paste0(input_folder,estado, "_PNI_clean.csv"), 
+                          colClasses = c("id" = "factor",
+                                         "data" = "character", "vacina" = "integer","n" = "integer",
+                                         "doses" = "factor","idade" = "integer"), encoding = "UTF-8")
+    
+  tabela_vacinas$data <- as.Date(tabela_vacinas$data)
+    
+  count_doses <- tabela_vacinas %>% group_by(id) %>% summarise(m = n())
+  tabela_vacinas <- tabela_vacinas %>% left_join(count_doses, by = "id")
+    
+  pretabela <- tabela_vacinas %>% select(-n, -m) %>% #select(-id) %>% 
+    filter(data > "2021-01-01") %>%
+    filter(data <= data_base) %>%
+    drop_na(vacina, idade, data, doses) %>%
+    mutate(vacina = factor(vacina, levels = c(85,86,87,88), labels = c("AZ","Coronavac","Pfizer","Janssen")),
+           agegroup = factor(cut(idade, 
+                                 breaks = c(0,5,12,18,seq(30,90,10),Inf),
+                                 #breaks = c(seq(0,90,10),Inf), 
+                                 include.lowest = T, 
+                                 right = F,
+                                 labels = F)))
+    
+  rm(tabela_vacinas);gc()
+    
+  tabela <- pretabela %>% count(vacina, agegroup, data,doses, .drop = FALSE)
+  
+  filename = paste0(output_folder,"doses_aplicadas/doses_aplicadas_",estado,".csv")
+  print(paste0("Salvando: ",filename))
+  fwrite(tabela, file = filename)
+    
+  tabela_id_idade <- pretabela %>% select(id, agegroup) %>% distinct()
+    
   tabela_wide = pretabela %>%
     select(-agegroup, -idade) %>%
-    pivot_wider(id_cols = id, 
-                names_from = doses, 
-                values_from = c(data, vacina), 
+    pivot_wider(id_cols = id,
+                names_from = doses,
+                values_from = c(data, vacina),
                 values_fn = first,
-                values_fill = NA) 
+                values_fill = NA)
   
-  tabela_wide = tabela_wide %>%
-    right_join(tabela_id_idade, by = "id", na_matches = "never") %>% select(-id)
-
-  write_csv(tabela_wide, file= paste0(output_folder,"wide_doses_aplicadas_",estado,".csv"))
+  rm(pretabela);gc()
   
-   reforco <- tabela_wide %>%
+  filename = paste0(output_folder,"wide/wide_doses_aplicadas_",estado,".csv")
+  print(paste0("Salvando: ",filename))
+  fwrite(tabela_wide, file = filename)
+  
+  ### Histórico apenas dos que necessitam de dose de reforço
+  
+  reforco <- tabela_wide %>%
     filter(!is.na(data_D2) & is.na(data_R) & is.na(vacina_DU)) %>%
-     count(data_D2, vacina_D2, agegroup) #%>% 
-    #count(data_D1, data_D2, data_R, data_DU, vacina_D1, vacina_D2, vacina_R, vacina_DU, agegroup) %>%
-    #filter(vacina_DU == "Janssen" & !is.na(vacina_D2)) # Remove casos em que D1 é Janssen e D2 é outra marca
+    count(data_D2, vacina_D2, agegroup) #%>%
+  #count(data_D1, data_D2, data_R, data_DU, vacina_D1, vacina_D2, vacina_R, vacina_DU, agegroup) %>%
+  #filter(vacina_DU == "Janssen" & !is.na(vacina_D2)) # Remove casos em que D1 é Janssen e D2 é outra marca
   
-   reforco <- reforco %>% mutate(dif = as.integer(as.Date(Sys.time()) - data_D2)) %>% select(-n)
-   write_csv(reforco, file= paste0(output_folder,"tempo_d2_reforco_",estado,".csv"))
+  reforco <- reforco %>% mutate(dif = as.integer(as.Date(Sys.time()) - data_D2)) %>% select(-n)
+  
+  filename = paste0(output_folder,"reforco/tempo_d2_reforco_",estado,".csv")
+  print(paste0("Salvando: ",filename))
+  fwrite(reforco, file = filename)
+  }
+
 }
+
+#' join_historico: 
+#' Faz a união das tabelas que foram separadas para estados com bancos de dados grandes
+#' 
+#' @estado: character. Sigla do estado do Brasil
+#' @data_base: Date. Data da base de dados.
+#' @input_folder: character. Caminho para leitura de dados
+#' @output_folder: character. Caminho para escrever os dados.
+#' 
+#' @return: a função não retorna nenhum output para o environment. 
+#' Porém, salvar três arquivos diferentes:
+#' * doses_aplicadas_{estado}.csv: tabela com histórico de doses aplicadas por data, vacina, 
+#' grupo etário e doses
+#' * wide_doses_aplicadas_{estado}.csv: tabela com vacina, grupo etário e datas de aplicação
+#' de cada dose por indivíduo (id)
+#' * tempo_d2_reforco_{estado}.csv: tabela com vacina, grupo etário e datas de aplicação
+#' de cada dose por indivíduo (id), apenas para aqueles que receberam a segunda dose mas
+#' não receberam a dose de reforço 
+
+join_historico <- function(estado = "SP", 
+                           data_base = as.Date("2022-01-15"),
+                           input_folder = "output/",
+                           output_folder = "output/") {
+
+  ### Create dataset with the following variables (long format table):
+  ### vacina, agegroup, data, doses, n
+  
+  # Locate splited files
+  splited_files <- grep("^doses_aplicadas_.+[1-9].csv", list.files(paste0(input_folder,"doses_aplicadas/")), value = T)
+  files <- grep(estado, splited_files, value = T)
+  
+  # Aggregate data into single table
+  doses_aplicadas <- tibble()
+  for(j in files) {
+    print(paste0("Reading: ",j))
+    df = tibble(fread(paste0(input_folder,j)))
+    df[is.na(df)] <- NA
+    doses_aplicadas <- rbind(doses_aplicadas, df)
+  }
+  
+  # Sum values according to groups
+  tabela <- doses_aplicadas %>% 
+    group_by(vacina, agegroup, data,doses, .drop = FALSE) %>%
+    summarise(n = sum(n))
+  
+  # Save aggregated data
+  filename = paste0(output_folder,"doses_aplicadas/doses_aplicadas_",estado,".csv")
+  print(paste0("Saving: ",filename))
+  fwrite(tabela, file = filename)
+  
+  ### Create dataset with the following variables (wide format table):
+  ### data_D1, data_D2, data_R, data_DU, vacina_D1, vacina_D2, vacina_R, vacina_DU, agegroup
+  
+  # Locate splited files
+  splited_files <- grep("wide_doses_aplicadas_.+[1-9].csv", list.files(paste0(input_folder,"wide/")), value = T)
+  files <- grep(estado, splited_files, value = T)
+  
+  # Aggregate data into single table
+  wide_doses <- tibble()
+  for(j in files) {
+    print(paste0("Reading: ",j))
+    df = tibble(fread(paste0(input_folder,j)))
+    df[is.na(df)] <- NA
+    wide_doses <- rbind(wide_doses, df)
+  }
+  
+  # Save aggregated data
+  filename = paste0(output_folder,"wide/wide_doses_aplicadas_",estado,".csv")
+  print(paste0("Saving: ",filename))
+  fwrite(wide_doses, file = filename)
+  
+  ### Individuals who require booster shots table
+  ### Create dataset with the following variables (wide format table):
+  ### data_D2, vacina_D2, agegroup, n, dif  
+  
+  reforco <- wide_doses %>%
+    filter(!is.na(data_D2) & is.na(data_R) & is.na(data_DU)) %>%
+    count(data_D2, vacina_D2, agegroup)  %>% 
+    mutate(dif = as.integer(as.Date(Sys.time()) - as.Date(data_D2)))
+  
+  filename = paste0(output_folder,"reforco/tempo_d2_reforco_",estado,".csv")
+  print(paste0("Saving: ",filename))
+  fwrite(reforco, file = filename)
+  
+  print(paste0(estado," done."))
+}
+
 
 #' plot_historico
 #' Plota representação visual da diferença entre tempo em dias 
