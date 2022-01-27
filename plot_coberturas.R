@@ -29,6 +29,18 @@ da$data <- as.Date(da$data)
 
 da2 <- da %>% left_join(de2, by = c("agegroup", "UF"))
 
+### Total por Estado, vacina e dose
+
+final = da %>%
+  as_tibble() %>%
+  drop_na(agegroup) %>%
+  group_by(UF, vacina, doses, agegroup) %>%
+  #group_by(agegroup, vacina, doses, n, UF) %>%
+  summarise(nn = sum(n, na.rm = T)) %>%
+  arrange(UF, vacina, doses, agegroup)
+
+write_csv(final, file = "total_vacinas.csv")
+
 ### DOSE 1
 
 d1 = da2 %>%
