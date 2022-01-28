@@ -4,7 +4,14 @@ require(geofacet)
 distribuicao_etaria <- read.csv("dados/DistrEtaria2020.csv")
 colnames(distribuicao_etaria)[1] <- "Idade"
 distribuicao_etaria <- distribuicao_etaria[-1,]
+rownames(distribuicao_etaria) <- NULL
+
+distribuicao_etaria[2,-1] <- as.integer(distribuicao_etaria[2,-1] + distribuicao_etaria[3,-1]*2/5) # 5-11
+distribuicao_etaria[3,-1] <- as.integer(distribuicao_etaria[3,-1]*3/5 + distribuicao_etaria[4,-1]*3/5) # 12-17
+distribuicao_etaria[4,-1] <- as.integer(distribuicao_etaria[4,-1]*2/5) # 18-19
+
 distribuicao_etaria$agegroup <- factor(c(1,2,3,4,4,4,rep(5:10, each = 2), 11))
+
 de2 <- distribuicao_etaria %>% 
   select(-Idade) %>% 
   group_by(agegroup) %>% 
