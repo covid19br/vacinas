@@ -33,7 +33,8 @@ def get_UF_file(index_page_address, UF, output_file):
             get_file(ei.attrib['href'], output_file + '.' + str(i))
         os.system(f'mv {output_file}.0 {output_file}')
         for i in range(1, len(e)):
-            os.system(f'tail -n +2 {output_file}.{i} >> {output_file}')
+            os.system(f'''tail -n +2 {output_file}.{i} >> {output_file} && 
+                          rm {output_file}.{i}''')
     return True
 
 def get_date(index_page_address):
@@ -77,8 +78,7 @@ if __name__ == '__main__':
     else:
         UFs = sys.argv[1:]
         if 'todas' in UFs:
-            UFs1 = estados1
-            UFs2 = estados2
+            UFs = estados1 + estados2
         for UF in UFs:
             if UF in estados1:
                 print(f'=== baixando base de {UF} ===\n')
