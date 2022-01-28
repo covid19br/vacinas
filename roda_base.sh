@@ -14,7 +14,7 @@ if [ -z $GIT_UPDATE ]; then
 fi
 
 #######baixar base atualizada #####pode demorar
-python3 sipni_downloader.py todas
+python3 sipni_downloader2.py todas
 
 if [ $? -ne 0 ]; then
     echo "erro ao baixar bases SI-PNI"
