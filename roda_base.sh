@@ -21,23 +21,28 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+####### pega data mais recente
+lastdate=`ls dados/dados_*.csv | grep -oP "20\d{2}-\d{2}-\d{2}" | sort -r | head -n1`
+
+echo "Processando base SI-PNI de $lastdate"
+
 #######limpa base
 pushd dados/
 echo "cleaning columns in $PWD folder"
-for i in dados_*.csv; do
+for i in dados_${lastdate}*.csv; do
     awk -f ../limpa_colunas.awk "$i" > limpo_"$i"
 done
 echo "done, returning to $dir"
 popd
 
 
-# #######estados que não splitam
+#######estados que não splitam
 estados=("AC" "AL" "AM" "AP" "BA" "CE" "DF" "ES" "GO" "MA" "MG" "MS" "MT" "PA" "PB" "PE" "PI" "PR" "RJ" "RN" "RO" "RR" "RS" "SC" "SE" "TO")
 echo "preparing data for states that doesn't split"
 for estado in "${estados[@]}"; do
-    Rscript prepara_dado.R "$estado" &&
-        Rscript prepara_cobertura.R "$estado" &&
-        rm output/${estado}_PNI_clean.csv
+    Rscript vaccine_functions.R --command prepara_dado --estado $estado --dataBase $lastdate &&
+      Rscript vaccine_functions.R --command prepara_cobertura --estado $estado --dataBase $lastdate &&
+      rm output/${estado}_PNI_clean.csv
     echo "state ${estado} done"
 done
 
@@ -48,15 +53,12 @@ estados_split=("SP")
 for estado in "${estados_split[@]}"; do
     pushd dados/
     echo "sorting state ${estado} in $PWD folder"
-    ./sort_files.sh limpo_dados*"$estado".csv
+    ./sort_files.sh limpo_dados_${lastdate}_${estado}.csv
     echo "done"
 
     echo "spliting state ${estado} in $PWD folder"
-    ## BUG: assume que a wildcard "sorted_limpo_dados*${estado}.csv" corresponde
-    ## a um único arquivo - se não for o caso, programa sai com erro
-    ./split_file.sh sorted_limpo_dados*${estado}.csv 4 &&
-        rm sorted_limpo_dados*${estado}.csv ||
-        { echo "erro! saindo..."; exit 1 ; }
+    ./split_file.sh sorted_limpo_dados_${lastdate}_${estado}.csv 4 &&
+      rm sorted_limpo_dados_${lastdate}_${estado}.csv
     echo "done"
     popd
 
@@ -71,15 +73,14 @@ for estado in "${estados_split[@]}"; do
     #popd
 
     echo "generating number of doses for state ${estado} in $PWD folder"
-    Rscript prepara_cobertura.R "$estado" &&
+    Rscript vaccine_functions.R --command prepara_cobertura --estado $estado --dataBase $lastdate &&
         rm output/${estado}_PNI_clean.csv
     echo "done"
 
     echo "cleaning data for state ${estado} in $PWD folder"
-    Rscript prepara_dado_split.R "$estado"
-    rm dados/split_sorted_limpo_dados*"$estado"_*.csv
+    Rscript vaccine_functions.R --command prepara_dado --split TRUE --estado $estado --dataBase $lastdate &&
+      rm dados/split_sorted_limpo_dados_${lastdate}_${estado}_*.csv
     echo "done"
-
 done
 
 echo "Processing finished"
@@ -95,7 +96,7 @@ if [ $GIT_UPDATE -eq 1 ]; then
         popd
     done
     cd $DADOS
-    git commit -m ":robot: atualizando dados processados SI-PNI `date +%Y_%m_%d`" &&
+    git commit -m ":robot: atualizando dados processados SI-PNI ${lastdate}" &&
         git push
 fi
 
