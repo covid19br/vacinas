@@ -4,6 +4,7 @@ if(!require(viridis)){install.packages("viridis"); library(viridis)}
 if(!require(wesanderson)){install.packages("wesanderson"); library(wesanderson)}
 if(!require(lubridate)){install.packages("lubridate"); library(lubridate)}
 if(!require(scales)){install.packages("scales"); library(scales)}
+if(!require(optparse)){install.packages("scales"); library(optparse)}
 
 doses_nomes <- function(x){
   
@@ -597,4 +598,69 @@ plot_proportion <- function(estado, distribuicao_etaria,
   }
 }
 
+################################################################################
+## Parsing command line arguments
+################################################################################
+if (sys.nframe() == 0L) {
+  option_list <- list(
+    make_option("--command",
+                help = ("Comando a ser feito: prepara_dado | prepara_cobertura"),
+                metavar = "command"),
+    make_option("--split", default = "FALSE",
+                help = ("Booleano. Dados são quebrados em partes?"),
+                metavar = "split"),
+    make_option("--dataBase",
+                help = ("Data da base de dados, formato 'yyyy-mm-dd'"),
+                metavar = "dataBase"),
+    make_option("--estado",
+                help = ("Sigla do estado"),
+                metavar = "estado"),
+    make_option("--input_folder", default = "dados/",
+                help = ("Pasta de dados de entrada"),
+                metavar = "input_folder"),
+    make_option("--output_folder", default = "output/",
+                help = ("Pasta de dados de saída"),
+                metavar = "output_folder")
+  )
+  parser_object <- OptionParser(usage = "Rscript %prog --command comando --estado UF --dataBase yyyy-mm-dd --split TRUE|FALSE \n",
+                                option_list = option_list,
+                                description = "Script para processar banco de dados de vacinção do SI-PNI.")
+
+  ## TO TEST INTERACTIVELY the command-line arguments
+  #input <- " --command prepara_dado --estado AC --dataBase 2022-01-26"
+  #command.args <- strsplit(input, " ")[[1]]
+  #opt <- parse_args(parser_object, args = command.args, positional_arguments = TRUE)
+  ## SKIP opt line below
+
+  opt <- parse_args(parser_object, args = commandArgs(trailingOnly = TRUE),
+                    positional_arguments = TRUE)
+  ## aliases
+  command <- opt$options$command
+  estado <- opt$options$estado
+  split <- opt$options$split
+  dataBase <- opt$options$dataBase
+  input_folder <- opt$options$input_folder
+  output_folder <- opt$options$output_folder
+
+  if (length(command) == 0 || length(estado) == 0 || length(dataBase) == 0) {
+    print("Argumento de entrada faltando! Saindo...")
+    quit(save = "no", status = 1)
+  }
+
+  # quit on error when run non-interactively #small change because this is killing my local sessions T_T
+  if (!interactive()) options(error = function() quit(save = "no", status = 1))
+
+  ### roda comando
+  if (command == "prepara_dado") {
+    prepare_table(estado, data_base = dataBase, split = split,
+                  input_folder = input_folder, output_folder = output_folder)
+  } else if (command == "prepara_cobertura") {
+    prepara_historico(estado, data_base = dataBase, split = split,
+                  input_folder = input_folder, output_folder = output_folder)
+    join_historico(estado, data_base = dataBase,
+                  input_folder = input_folder, output_folder = output_folder)
+  } else {
+    print(paste("Comando", command, "não encontrado."))
+  }
+}
 
