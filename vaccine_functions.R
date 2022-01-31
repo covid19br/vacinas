@@ -346,7 +346,10 @@ prepara_historico <- function(estado = "SP",
                 names_from = doses,
                 values_from = c(data, vacina),
                 values_fn = first,
-                values_fill = NA)
+                values_fill = NA) %>%
+    left_join(tabela_id_idade, by = "id",
+              na_matches = "never") %>%
+    select(-id)
   
   rm(pretabela);gc()
   
