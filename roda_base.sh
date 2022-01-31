@@ -90,7 +90,7 @@ echo "Cleaning up"
 
 if [ $GIT_UPDATE -eq 1 ]; then
     for estado in "${estados[@]}" "${estados_split[@]}"; do
-        cp "output/doses_aplicadas_${estado}.csv" $DADOS/doses_estados/
+        cp "output/doses_aplicadas/doses_aplicadas_${estado}.csv" $DADOS/doses_estados/
         pushd $DADOS
         git add "doses_estados/doses_aplicadas_${estado}.csv"
         popd

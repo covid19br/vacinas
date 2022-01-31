@@ -656,9 +656,9 @@ if (sys.nframe() == 0L) {
                   input_folder = input_folder, output_folder = output_folder)
   } else if (command == "prepara_cobertura") {
     prepara_historico(estado, data_base = dataBase, split = split,
-                  input_folder = input_folder, output_folder = output_folder)
+                  input_folder = output_folder, output_folder = output_folder)
     join_historico(estado, data_base = dataBase,
-                  input_folder = input_folder, output_folder = output_folder)
+                  input_folder = output_folder, output_folder = output_folder)
   } else {
     print(paste("Comando", command, "não encontrado."))
   }
