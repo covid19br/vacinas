@@ -26,6 +26,11 @@ usage(){
     echo -e "       dados ou removê-los) [equivalente a -dcpg]\n"
 }
 
+if [ "$#" -eq 0 ]; then
+    usage
+    exit 0
+fi
+
 # command-line options
 OPTIND=1         # Reset in case getopts has been used previously in the shell.
 download=
@@ -64,8 +69,6 @@ while getopts "hdocpga" opt; do
 done
 shift $((OPTIND-1))
 [ "${1:-}" = "--" ] && shift
-
-exit
 
 if [ $download ]; then
     ## pega data mais recente
