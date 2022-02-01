@@ -76,7 +76,7 @@ if [ $download ]; then
 
     echo "== Tentando baixar base SI-PNI =="
 
-    if [ $overwrite ]; then
+    if [[ $overwrite || -z $olddate ]]; then
         python3 sipni_downloader2.py todas
     else
         python3 sipni_downloader2.py todas -d"$olddate"
