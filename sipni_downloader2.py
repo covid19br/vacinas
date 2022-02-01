@@ -74,22 +74,32 @@ if __name__ == '__main__':
         sys.exit(1)
     print(f'data da última atualização: {data1.strftime("%Y-%m-%d")}')
     if len(sys.argv) == 1:
-        print("USO: sipni_downloader [UF1] [UF2] ... | [todas]")
-    else:
-        UFs = sys.argv[1:]
-        if 'todas' in UFs:
-            UFs = estados1 + estados2
-        for UF in UFs:
-            if UF in estados1:
-                print(f'=== baixando base de {UF} ===\n')
-                fname = f'dados_{data1.strftime("%Y-%m-%d")}_{UF}.csv'
-                output_file = os.path.join(output_folder, fname)
-                get_UF_file(index_page_address1, UF, output_file)
-            elif UF in estados2:
-                print(f'=== baixando base de {UF} ===\n')
-                fname = f'dados_{data2.strftime("%Y-%m-%d")}_{UF}.csv'
-                output_file = os.path.join(output_folder, fname)
-                get_UF_file(index_page_address2, UF, output_file)
-            else:
-                print(f'\n   "{UF}" não é uma UF válida\n')
+        print("USO: sipni_downloader [UF1] [UF2] ... | [todas] -dYYYY-mm-dd")
+        sys.exit(0)
+
+    UFs = []
+    data_ant = False
+    for arg in sys.argv[1:]:
+        if arg[:2] == "-d":
+            data_ant = strptime(arg[2:], "%Y-%m-%d")
+        else:
+            UFs.append(arg)
+    if 'todas' in UFs:
+        UFs = estados1 + estados2
+    if data_ant and data1 <= data_ant:
+        print("Base não foi atualizada desde a data pedida.")
+        sys.exit(2)
+    for UF in UFs:
+        if UF in estados1:
+            print(f'=== baixando base de {UF} ===\n')
+            fname = f'dados_{data1.strftime("%Y-%m-%d")}_{UF}.csv'
+            output_file = os.path.join(output_folder, fname)
+            get_UF_file(index_page_address1, UF, output_file)
+        elif UF in estados2:
+            print(f'=== baixando base de {UF} ===\n')
+            fname = f'dados_{data2.strftime("%Y-%m-%d")}_{UF}.csv'
+            output_file = os.path.join(output_folder, fname)
+            get_UF_file(index_page_address2, UF, output_file)
+        else:
+            print(f'\n   "{UF}" não é uma UF válida\n')
 
