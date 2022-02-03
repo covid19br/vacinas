@@ -110,11 +110,14 @@ fi
 
 if [ $process ]; then
     echo "== Processando base SI-PNI de ${lastdate} =="
+
+    lastdate=`ls dados/dados_*.csv | grep -oP "20\d{2}-\d{2}-\d{2}" | sort -r | head -n1`
     #######estados que não splitam
     estados=("AC" "AL" "AM" "AP" "BA" "CE" "DF" "ES" "GO" "MA" "MG" "MS" "MT" "PA" "PB" "PE" "PI" "PR" "RJ" "RN" "RO" "RR" "RS" "SC" "SE" "TO")
+
     echo "preparing data for states that doesn't split"
     for estado in "${estados[@]}"; do
-        Rscript vaccine_functions.R --command prepara_dado --estado $estado --dataBase $lastdate &&
+          Rscript vaccine_functions.R --command prepara_dado --estado $estado --dataBase $lastdate &&
           Rscript vaccine_functions.R --command prepara_cobertura --estado $estado --dataBase $lastdate &&
           rm output/${estado}_PNI_clean.csv
         echo "state ${estado} done"
@@ -131,7 +134,7 @@ if [ $process ]; then
     
         echo "spliting state ${estado} in $PWD folder"
         ./split_file.sh sorted_limpo_dados_${lastdate}_${estado}.csv 4 &&
-          rm sorted_limpo_dados_${lastdate}_${estado}.csv
+         # rm sorted_limpo_dados_${lastdate}_${estado}.csv
         echo "done"
         popd
     
@@ -146,12 +149,12 @@ if [ $process ]; then
         #popd
     
         echo "generating number of doses for state ${estado} in $PWD folder"
-        Rscript vaccine_functions.R --command prepara_cobertura --estado $estado --dataBase $lastdate &&
+        Rscript vaccine_functions.R --command prepara_dado --split TRUE --estado $estado --dataBase $lastdate &&
             rm output/${estado}_PNI_clean.csv
         echo "done"
     
         echo "cleaning data for state ${estado} in $PWD folder"
-        Rscript vaccine_functions.R --command prepara_dado --split TRUE --estado $estado --dataBase $lastdate &&
+        Rscript vaccine_functions.R --command prepara_cobertura_split --split TRUE --estado $estado --dataBase $lastdate &&
           rm dados/split_sorted_limpo_dados_${lastdate}_${estado}_*.csv
         echo "done"
     done
