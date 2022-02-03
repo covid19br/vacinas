@@ -1,6 +1,20 @@
 require(tidyverse)
 require(geofacet)
 
+
+###########################
+end.of.epiweek <- function(x, end = 6) {
+  offset <- (end - 4) %% 7
+  num.x <- as.numeric(x)
+  return(x - (num.x %% 7) + offset + ifelse(num.x %% 7 > offset, 7, 0))
+}
+
+###########################
+
+data_corte = as.Date("2021-09-01")
+data_base = as.Date("2022-02-01")
+data_base_texto <- format(data_base, format = "%d de %B de %Y")
+
 distribuicao_etaria <- read.csv("dados/DistrEtaria2020.csv")
 colnames(distribuicao_etaria)[1] <- "Idade"
 distribuicao_etaria <- distribuicao_etaria[-1,]
@@ -19,13 +33,13 @@ de2 <- distribuicao_etaria %>%
   gather(key = "UF", value = "total", -agegroup)
 
 ###
-files <- list.files("dados_output/doses_aplicadas")[!grepl("[1-9].csv", list.files("dados_output/doses_aplicadas"))]
+files <- list.files("output/doses_aplicadas")[!grepl("[1-9].csv", list.files("output/doses_aplicadas"))]
 
 da <- data.frame()
 for(i in files) {
   state = substr(i,17,18)
   print(state)
-  df <- data.frame(read.csv(paste0("dados_output/doses_aplicadas/",i)), UF = state)
+  df <- data.frame(read.csv(paste0("output/doses_aplicadas/",i)), UF = state)
   da <- rbind(da, df)
 }
 
@@ -75,10 +89,35 @@ gd1 <- d1 %>%
   scale_x_date(date_labels = "%b-%y", date_breaks = "2 months") +
   theme(axis.text.x = element_text(angle = 270, hjust = 1)) +
   labs(title = "Cobertura de Dose 1",
-       caption = "Fonte: SI-PNI em 15 de janeiro de 2022.\nEstimativas populacionais das faixas etárias de 5 a 29 anos são aproximadas")
+       caption = paste0("Fonte: SI-PNI em ", data_base_texto, ".\nEstimativas populacionais das faixas etárias de 5 a 29 anos são aproximadas"))
 #gd1
 ggsave(gd1, file = "figuras/dose_1.pdf", width = 15, height = 10)
 ggsave(gd1, file = "figuras/dose_1.png", width = 15, height = 10, dpi = 200)
+
+###
+gd1b <- d1 %>%
+  filter(data >= data_corte) %>%
+  mutate(week = end.of.epiweek(data)) %>%
+  ggplot(aes(x = week, y = n)) + #, color = agegroup)) + #, fill = agegroup)) +
+  geom_col() +
+  geom_hline(yintercept = 100, linetype = "dashed") +
+  facet_wrap(~UF,  scale = "free_y") +
+  # facet_geo(~UF, grid = "br_states_grid1", scale = "free_y") +
+  theme_minimal() +
+  xlab("") + ylab("Cobertura (%)") +
+  #scale_fill_discrete("Faixa etária",
+   #                    labels = c("0-4","5-11","12-17","18-29",
+  #                                "30-39","40-49","50-59",
+   #                               "60-69","70-79","80-89","90+")) +
+ # scale_color_discrete(show.legend = FALSE) +
+  scale_x_date(date_labels = "%b-%y", date_breaks = "2 months") +
+  theme(axis.text.x = element_text(angle = 270, hjust = 1)) +
+  labs(title = "Novas aplicações de Dose 1 (semanal)",
+       caption = paste0("Fonte: SI-PNI em ", data_base_texto))
+#gd1
+ggsave(gd1b, file = "figuras/dose_1_diario.pdf", width = 15, height = 10)
+ggsave(gd1b, file = "figuras/dose_1_diario.png", width = 15, height = 10, dpi = 200)
+
 
 ### DOSE 2
 
@@ -107,10 +146,34 @@ gd2 <- d2 %>%
   scale_x_date(date_labels = "%b-%y", date_breaks = "2 months") +
   theme(axis.text.x = element_text(angle = 270, hjust = 1)) +
   labs(title = "Cobertura de Dose 2",
-       caption = "Fonte: SI-PNI em 15 de janeiro de 2022.\nEstimativas populacionais das faixas etárias de 5 a 29 anos são aproximadas")
+       caption = paste0("Fonte: SI-PNI em ", data_base_texto, ".\nEstimativas populacionais das faixas etárias de 5 a 29 anos são aproximadas"))
 #gd2
 ggsave(gd2, file = "figuras/dose_2.pdf", width = 15, height = 10)
 ggsave(gd2, file = "figuras/dose_2.png", width = 15, height = 10, dpi = 200)
+
+###
+gd2b <- d2 %>%
+  filter(data >= data_corte) %>%
+  mutate(week = end.of.epiweek(data)) %>%
+  ggplot(aes(x = week, y = n)) + #, color = agegroup)) + #, fill = agegroup)) +
+  geom_col() +
+  geom_hline(yintercept = 100, linetype = "dashed") +
+  facet_wrap(~UF,  scale = "free_y") +
+  # facet_geo(~UF, grid = "br_states_grid1", scale = "free_y") +
+  theme_minimal() +
+  xlab("") + ylab("Cobertura (%)") +
+  #scale_fill_discrete("Faixa etária",
+  #                    labels = c("0-4","5-11","12-17","18-29",
+  #                                "30-39","40-49","50-59",
+  #                               "60-69","70-79","80-89","90+")) +
+  # scale_color_discrete(show.legend = FALSE) +
+  scale_x_date(date_labels = "%b-%y", date_breaks = "2 months") +
+  theme(axis.text.x = element_text(angle = 270, hjust = 1)) +
+  labs(title = "Novas aplicações de Dose 2 (semanal)",
+       caption = paste0("Fonte: SI-PNI em ", data_base_texto))
+#gd1
+ggsave(gd2b, file = "figuras/dose_2_diario.pdf", width = 15, height = 10)
+ggsave(gd2b, file = "figuras/dose_2_diario.png", width = 15, height = 10, dpi = 200)
 
 ### DOSE REFORÇO
 
@@ -139,7 +202,32 @@ gdr <- dr %>%
   scale_x_date(date_labels = "%b-%y", date_breaks = "2 months") +
   theme(axis.text.x = element_text(angle = 270, hjust = 1)) +
   labs(title = "Cobertura de doses de reforço",
-       caption = "Fonte: SI-PNI em 15 de janeiro de 2022.\nEstimativas populacionais das faixas etárias de 5 a 29 anos são aproximadas")
+       caption = paste0("Fonte: SI-PNI em ", data_base_texto))
 #gdr
 ggsave(gdr, file = "figuras/dose_reforco.pdf", width = 15, height = 10)
 ggsave(gdr, file = "figuras/dose_reforco.png", width = 15, height = 10, dpi = 200)
+
+
+###
+grb <- dr %>%
+  filter(data >= data_corte) %>%
+  mutate(week = end.of.epiweek(data)) %>%
+  ggplot(aes(x = week, y = n)) + #, color = agegroup)) + #, fill = agegroup)) +
+  geom_col() +
+  geom_hline(yintercept = 100, linetype = "dashed") +
+  facet_wrap(~UF,  scale = "free_y") +
+  # facet_geo(~UF, grid = "br_states_grid1", scale = "free_y") +
+  theme_minimal() +
+  xlab("") + ylab("Cobertura (%)") +
+  #scale_fill_discrete("Faixa etária",
+  #                    labels = c("0-4","5-11","12-17","18-29",
+  #                                "30-39","40-49","50-59",
+  #                               "60-69","70-79","80-89","90+")) +
+  # scale_color_discrete(show.legend = FALSE) +
+  scale_x_date(date_labels = "%b-%y", date_breaks = "2 months") +
+  theme(axis.text.x = element_text(angle = 270, hjust = 1)) +
+  labs(title = "Novas aplicações de doses de reforço (semanal)",
+       caption = paste0("Fonte: SI-PNI em ", data_base_texto, ".\nEstimativas populacionais das faixas etárias de 5 a 29 anos são aproximadas"))
+#gd1
+ggsave(grb, file = "figuras/dose_reforco_diario.pdf", width = 15, height = 10)
+ggsave(grb, file = "figuras/dose_reforci_diario.png", width = 15, height = 10, dpi = 200)
