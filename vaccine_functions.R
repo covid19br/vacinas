@@ -1,3 +1,4 @@
+suppressPackageStartupMessages({
 if(!require(data.table)){install.packages("data.table"); library(data.table)}
 if(!require(tidyverse)){install.packages("tidyverse"); library(tidyverse)}
 if(!require(viridis)){install.packages("viridis"); library(viridis)}
@@ -5,6 +6,7 @@ if(!require(wesanderson)){install.packages("wesanderson"); library(wesanderson)}
 if(!require(lubridate)){install.packages("lubridate"); library(lubridate)}
 if(!require(scales)){install.packages("scales"); library(scales)}
 if(!require(optparse)){install.packages("scales"); library(optparse)}
+})
 
 doses_nomes <- function(x){
   
@@ -122,8 +124,8 @@ prepare_table <- function(estado, write.dose.types = TRUE,
                                           "vacina_codigo" = "integer"), 
                            encoding = "UTF-8")
     
-    print("Data succesfully loaded")
-    print("Preparing data... 1")
+    print(paste0(estado," data succesfully loaded"))
+    print(paste0("Preparing data... 1 (", estado, ")"))
     
     todas_vacinas$vacina_codigo[todas_vacinas$vacina_codigo == 89] <- 85
     
@@ -152,7 +154,7 @@ prepare_table <- function(estado, write.dose.types = TRUE,
     todas_vacinas <- todas_vacinas %>% filter(paciente_dataNascimento > "1900-01-01")
     
     ##
-    print("Preparing data... 2")
+    print(paste0("Preparing data... 2 (", estado, ")"))
     
     ##########################
     
@@ -408,7 +410,7 @@ join_historico <- function(estado = "SP",
   doses_aplicadas <- tibble()
   for(j in files) {
     print(paste0("Reading: ",j))
-    df = tibble(fread(paste0(input_folder,j)))
+    df = tibble(fread(paste0(input_folder,"doses_aplicadas/",j)))
     df[is.na(df)] <- NA
     doses_aplicadas <- rbind(doses_aplicadas, df)
   }
@@ -434,7 +436,7 @@ join_historico <- function(estado = "SP",
   wide_doses <- tibble()
   for(j in files) {
     print(paste0("Reading: ",j))
-    df = tibble(fread(paste0(input_folder,j)))
+    df = tibble(fread(paste0(input_folder,"wide/",j)))
     df[is.na(df)] <- NA
     wide_doses <- rbind(wide_doses, df)
   }
@@ -660,8 +662,11 @@ if (sys.nframe() == 0L) {
   } else if (command == "prepara_cobertura") {
     prepara_historico(estado, data_base = dataBase, split = split,
                   input_folder = output_folder, output_folder = output_folder)
+  } else if (command == "prepara_cobertura_split") {
+    prepara_historico(estado, data_base = dataBase, split = split,
+                      input_folder = output_folder, output_folder = output_folder)
     join_historico(estado, data_base = dataBase,
-                  input_folder = output_folder, output_folder = output_folder)
+                   input_folder = output_folder, output_folder = output_folder)
   } else {
     print(paste("Comando", command, "não encontrado."))
   }

@@ -3,13 +3,13 @@ require(data.table)
 
 ###
 ini = Sys.time()
-files <- list.files("dados_output/wide")[!grepl("[1-9].csv", list.files("dados_output/wide"))]
+gdhfiles <- list.files("output/wide")[!grepl("[1-9].csv", list.files("output/wide"))]
 
 da <- data.frame()
 for(i in files) {
   state = substr(i,22,23) #
   print(state)
-  df <- read.csv(paste0("dados_output/wide/",i))
+  df <- read.csv(paste0("output/wide/",i))
   df[df==""] <- NA
   df$dose <- ""
   df$dose[!is.na(df$data_D1) & is.na(df$data_D2) & is.na(df$data_R)] <- "D1"
@@ -30,7 +30,7 @@ for(i in files) {
 
 da <- da %>% filter(vacina_D1 != "Janssen")
 
-fwrite(da, file = "total_vacinas.csv")
+fwrite(da, file = "output/total_vacinas.csv")
 
 fin = Sys.time()
 fin - ini
