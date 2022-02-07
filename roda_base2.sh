@@ -134,7 +134,7 @@ if [ $process ]; then
     
         echo "spliting state ${estado} in $PWD folder"
         ./split_file.sh sorted_limpo_dados_${lastdate}_${estado}.csv 4 &&
-         # rm sorted_limpo_dados_${lastdate}_${estado}.csv
+          rm sorted_limpo_dados_${lastdate}_${estado}.csv
         echo "done"
         popd
     
