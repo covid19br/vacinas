@@ -91,7 +91,6 @@ gd1 <- d1 %>%
   labs(title = "Cobertura de Dose 1",
        caption = paste0("Fonte: SI-PNI em ", data_base_texto, ".\nEstimativas populacionais das faixas etárias de 5 a 29 anos são aproximadas"))
 #gd1
-ggsave(gd1, file = "figuras/dose_1.pdf", width = 15, height = 10)
 ggsave(gd1, file = "figuras/dose_1.png", width = 15, height = 10, dpi = 200)
 
 ###
@@ -115,7 +114,6 @@ gd1b <- d1 %>%
   labs(title = "Novas aplicações de Dose 1 (semanal)",
        caption = paste0("Fonte: SI-PNI em ", data_base_texto))
 #gd1
-ggsave(gd1b, file = "figuras/dose_1_diario.pdf", width = 15, height = 10)
 ggsave(gd1b, file = "figuras/dose_1_diario.png", width = 15, height = 10, dpi = 200)
 
 
@@ -148,7 +146,6 @@ gd2 <- d2 %>%
   labs(title = "Cobertura de Dose 2",
        caption = paste0("Fonte: SI-PNI em ", data_base_texto, ".\nEstimativas populacionais das faixas etárias de 5 a 29 anos são aproximadas"))
 #gd2
-ggsave(gd2, file = "figuras/dose_2.pdf", width = 15, height = 10)
 ggsave(gd2, file = "figuras/dose_2.png", width = 15, height = 10, dpi = 200)
 
 ###
@@ -172,7 +169,6 @@ gd2b <- d2 %>%
   labs(title = "Novas aplicações de Dose 2 (semanal)",
        caption = paste0("Fonte: SI-PNI em ", data_base_texto))
 #gd1
-ggsave(gd2b, file = "figuras/dose_2_diario.pdf", width = 15, height = 10)
 ggsave(gd2b, file = "figuras/dose_2_diario.png", width = 15, height = 10, dpi = 200)
 
 ### DOSE REFORÇO
@@ -204,7 +200,6 @@ gdr <- dr %>%
   labs(title = "Cobertura de doses de reforço",
        caption = paste0("Fonte: SI-PNI em ", data_base_texto))
 #gdr
-ggsave(gdr, file = "figuras/dose_reforco.pdf", width = 15, height = 10)
 ggsave(gdr, file = "figuras/dose_reforco.png", width = 15, height = 10, dpi = 200)
 
 
@@ -229,5 +224,4 @@ grb <- dr %>%
   labs(title = "Novas aplicações de doses de reforço (semanal)",
        caption = paste0("Fonte: SI-PNI em ", data_base_texto, ".\nEstimativas populacionais das faixas etárias de 5 a 29 anos são aproximadas"))
 #gd1
-ggsave(grb, file = "figuras/dose_reforco_diario.pdf", width = 15, height = 10)
 ggsave(grb, file = "figuras/dose_reforci_diario.png", width = 15, height = 10, dpi = 200)

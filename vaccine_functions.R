@@ -210,19 +210,16 @@ prepara_historico <- function(estado = "SP",
                               data_base = as.Date("2022-01-15"),
                               input_folder = "output/",
                               output_folder = "output/",
-                              split = FALSE) {
+                              split = FALSE,
+                              age_method = "children",
+                              doses_aplicadas_apenas = FALSE) {
   
   if(class(data_base) == "character") data_base <- as.Date(data_base)
   
   if(split) {
    
- # if(!require(doParallel)){install.packages("doParallel"); library(doParallel)}
-  #registerDoParallel(cores=detectCores()-1)
-    
   splited_files <- grep("[1-9]_PNI_clean.csv", list.files(input_folder), value = T)
   files <- grep(estado, splited_files, value = T)
-  
-  #tabela_wide = tibble()
   
   for(j in 1:length(files)) {
   print(files[j])
@@ -237,6 +234,8 @@ prepara_historico <- function(estado = "SP",
   count_doses <- tabela_vacinas %>% group_by(id) %>% summarise(m = n())
   tabela_vacinas <- tabela_vacinas %>% left_join(count_doses, by = "id")
   
+  if(age_method == "children") {
+    
   pretabela <- tabela_vacinas %>% select(-n, -m) %>% #select(-id) %>% 
     filter(data > "2021-01-01") %>%
     filter(data <= data_base) %>%
@@ -244,22 +243,36 @@ prepara_historico <- function(estado = "SP",
     mutate(vacina = factor(vacina, levels = c(85,86,87,88), labels = c("AZ","Coronavac","Pfizer","Janssen")),
            agegroup = factor(cut(idade, 
                           breaks = c(0,5,12,18,seq(30,90,10),Inf),
-                          #breaks = c(seq(0,90,10),Inf), 
                           include.lowest = T, 
                           right = F,
-                          labels = F)))
-
-  #rm(tabela_vacinas);gc()
+                          labels = F))) } else {
+  
+  # Age groups in 10 year bins
+  pretabela <- tabela_vacinas %>% select(-n, -m) %>% #select(-id) %>% 
+    filter(data > "2021-01-01") %>%
+    filter(data <= data_base) %>%
+    drop_na(vacina, idade, data, doses) %>%
+    mutate(vacina = factor(vacina, levels = c(85,86,87,88), labels = c("AZ","Coronavac","Pfizer","Janssen")),
+           agegroup = factor(cut(idade, 
+                                 breaks = c(seq(0,90,10),Inf), 
+                                 include.lowest = T, 
+                                 right = F,
+                                 labels = F)))
+  }
+  rm(tabela_vacinas);gc()
   
   tabela <- pretabela %>% count(vacina, agegroup, data,doses, .drop = FALSE)
-  filename = paste0(output_folder,"doses_aplicadas/doses_aplicadas_",estado,"_",j,".csv")
+  
+  if(age_method != "children") {add_name = "_10";add_name2 = "10_"}
+  filename = paste0(output_folder,"doses_aplicadas",add_name,"/doses_aplicadas_",add_name2,estado,"_",j,".csv")
+  
   print(filename)
   fwrite(tabela, file= filename)
   
+  if(!doses_aplicadas_apenas) {
   ### Preparar tabela em formato wide
   
   tabela_id_idade <- pretabela %>% select(id, agegroup) %>% distinct()
-  print(259)
   
     cut_points <- as.integer(c(seq(1,  nrow(pretabela), 3*10^6), nrow(pretabela)))
   #cut_points <- as.integer(c(seq(1,  9*10^6, 3*10^6), nrow(pretabela)))
@@ -305,7 +318,7 @@ prepara_historico <- function(estado = "SP",
   filename = paste0(output_folder,"reforco/tempo_d2_reforco_",estado,"_",j,".csv")
   print(paste0("Salvando: ",filename))
   fwrite(reforco, file= filename)
-  
+  }
    } #j
     
   } else {
@@ -319,6 +332,8 @@ prepara_historico <- function(estado = "SP",
     
   count_doses <- tabela_vacinas %>% group_by(id) %>% summarise(m = n())
   tabela_vacinas <- tabela_vacinas %>% left_join(count_doses, by = "id")
+
+  if(age_method == "children") {
     
   pretabela <- tabela_vacinas %>% select(-n, -m) %>% #select(-id) %>% 
     filter(data > "2021-01-01") %>%
@@ -327,18 +342,35 @@ prepara_historico <- function(estado = "SP",
     mutate(vacina = factor(vacina, levels = c(85,86,87,88), labels = c("AZ","Coronavac","Pfizer","Janssen")),
            agegroup = factor(cut(idade, 
                                  breaks = c(0,5,12,18,seq(30,90,10),Inf),
-                                 #breaks = c(seq(0,90,10),Inf), 
                                  include.lowest = T, 
                                  right = F,
                                  labels = F)))
-    
+  } else {
+  
+  # Age groups in 10 year bins  
+  pretabela <- tabela_vacinas %>% select(-n, -m) %>% #select(-id) %>% 
+    filter(data > "2021-01-01") %>%
+    filter(data <= data_base) %>%
+    drop_na(vacina, idade, data, doses) %>%
+    mutate(vacina = factor(vacina, levels = c(85,86,87,88), labels = c("AZ","Coronavac","Pfizer","Janssen")),
+           agegroup = factor(cut(idade, 
+                                 breaks = c(seq(0,90,10),Inf), 
+                                 include.lowest = T, 
+                                 right = F,
+                                 labels = F)))
+  }
+  
   rm(tabela_vacinas);gc()
     
   tabela <- pretabela %>% count(vacina, agegroup, data,doses, .drop = FALSE)
   
-  filename = paste0(output_folder,"doses_aplicadas/doses_aplicadas_",estado,".csv")
+  if(age_method != "children") {add_name = "_10";add_name2 = "10_"}
+  filename = paste0(output_folder,"doses_aplicadas",add_name,"/doses_aplicadas_",add_name2,estado,".csv")
+  
   print(paste0("Salvando: ",filename))
   fwrite(tabela, file = filename)
+  
+  if(!doses_aplicadas_apenas) {
     
   tabela_id_idade <- pretabela %>% select(id, agegroup) %>% distinct()
     
@@ -373,7 +405,7 @@ prepara_historico <- function(estado = "SP",
   print(paste0("Salvando: ",filename))
   fwrite(reforco, file = filename)
   }
-
+ }
 }
 
 #' join_historico: 

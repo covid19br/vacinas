@@ -3,7 +3,7 @@ require(data.table)
 
 ###
 ini = Sys.time()
-gdhfiles <- list.files("output/wide")[!grepl("[1-9].csv", list.files("output/wide"))]
+files <- list.files("output/wide")[!grepl("[1-9].csv", list.files("output/wide"))]
 
 da <- data.frame()
 for(i in files) {
