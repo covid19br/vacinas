@@ -421,8 +421,8 @@ join_historico <- function(estado = "SP",
   }
   
   # Sum values according to groups
-  tabela <- doses_aplicadas %>% 
-    group_by(vacina, agegroup, data,doses, .drop = FALSE) %>%
+  tabela <- doses_aplicadas %>%
+    group_by(vacina, agegroup, agegroup_10, data,doses, .drop = FALSE) %>%
     summarise(n = sum(n))
   
   # Save aggregated data
