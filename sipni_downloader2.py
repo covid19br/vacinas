@@ -81,7 +81,7 @@ if __name__ == '__main__':
     data_ant = False
     for arg in sys.argv[1:]:
         if arg[:2] == "-d":
-            data_ant = strptime(arg[2:], "%Y-%m-%d")
+            data_ant = datetime.strptime(arg[2:], "%Y-%m-%d")
         else:
             UFs.append(arg)
     if 'todas' in UFs:
