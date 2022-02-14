@@ -177,9 +177,11 @@ if [ $gitupdate ]; then
         git add "doses_estados/doses_aplicadas_${estado}.csv"
         popd
     done
-	
-	git add "output/doses_serie_temporal.csv"
-	git add "output/doses_por_estado.csv"
+
+    cp "output/doses_serie_temporal.csv" "output/doses_por_estado.csv" $DADOS/
+    pushd $DADOS
+    git add "doses_serie_temporal.csv" "doses_por_estado.csv"
+    popd
 	
     cd $DADOS
     git commit -m ":robot: atualizando dados processados SI-PNI ${lastdate}" &&
