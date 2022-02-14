@@ -158,10 +158,11 @@ if [ $process ]; then
           rm dados/split_sorted_limpo_dados_${lastdate}_${estado}_*.csv
         echo "done"
     
-        echo "counting doses for all states"
-        Rscript contar_doses_por_estado.R
-        echo "done"	
 	done
+
+    echo "counting doses for all states"
+    Rscript contar_doses_por_estado.R
+    echo "done"
 fi
 
 if [ $remove ]; then
