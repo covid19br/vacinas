@@ -157,7 +157,11 @@ if [ $process ]; then
         Rscript vaccine_functions.R --command prepara_cobertura_split --split TRUE --estado $estado --dataBase $lastdate &&
           rm dados/split_sorted_limpo_dados_${lastdate}_${estado}_*.csv
         echo "done"
-    done
+    
+        echo "counting doses for all states"
+        Rscript contar_doses_por_estado.R
+        echo "done"	
+	done
 fi
 
 if [ $remove ]; then
@@ -172,6 +176,10 @@ if [ $gitupdate ]; then
         git add "doses_estados/doses_aplicadas_${estado}.csv"
         popd
     done
+	
+	git add "output/doses_serie_temporal.csv"
+	git add "output/doses_por_estado.csv"
+	
     cd $DADOS
     git commit -m ":robot: atualizando dados processados SI-PNI ${lastdate}" &&
         git push
