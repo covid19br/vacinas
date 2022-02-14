@@ -1,5 +1,7 @@
-require(tidyverse)
-require(data.table)
+suppressPackageStartupMessages({
+  if(!require(data.table)){install.packages("data.table"); library(data.table)}
+  if(!require(tidyverse)){install.packages("tidyverse"); library(tidyverse)}
+})
 
 ###
 ini = Sys.time()
