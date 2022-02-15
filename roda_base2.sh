@@ -23,7 +23,8 @@ usage(){
     echo -e "    -g atualize o repositório com dados processados"
     echo -e "    -r remove os arquivos de dados baixados e/ou limpos"
     echo -e "    -a faça todas as tarefas anteriores (exceto -o e -r, ie sem sobrescrever"
-    echo -e "       dados ou removê-los) [equivalente a -dcpg]\n"
+    echo -e "       dados ou removê-los) [equivalente a -dcpg]"
+    echo -e "    -m avise por e-mail quando a tarefa estiver completa\n"
 }
 
 if [ "$#" -eq 0 ]; then
@@ -39,6 +40,7 @@ clean=
 process=
 gitupdate=
 remove=
+mail=
 while getopts "hdocpga" opt; do
     case "$opt" in
     h)
@@ -61,6 +63,8 @@ while getopts "hdocpga" opt; do
         clean=1
         process=1
         gitupdate=1
+        ;;
+    m)  mail=1
         ;;
     *)
         usage
@@ -188,3 +192,12 @@ if [ $gitupdate ]; then
         git push
 fi
 
+if [ $mail ]; then
+    ( echo "Nova base do SI-PNI de ${lastdate} processada.
+
+Os dados agregados estão disponíveis no repositório https://github.com/covid19br/dados-vacinas.
+
+Atenciosamente,
+Robot mailer" ) |
+    s-nail -s "nova base SI-PNI de ${lastdate}" `< emails.txt`
+fi
