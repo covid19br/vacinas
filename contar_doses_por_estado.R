@@ -47,8 +47,17 @@ for(i in files) {
   state = substr(i,22,23)
   print(state)
   
-  df <- read.csv(paste0("output/wide/",i))
+  df <- data.frame(fread(paste0("output/wide/",i),
+              select = c("data_D1","data_R","data_D2","data_DU","agegroup"),
+              colClasses = c("data_D1" = "Date",
+                             "data_R" = "Date",
+                             "data_D2" = "Date",
+                             "data_DU" = "Date")))
+                         
+        
   df[df==""] <- NA
+  df$agegroup <- factor(df$agegroup, levels = c(1:11))
+  
   df$dose <- ""
   
   df$dose[!is.na(df$data_R)] <- "R"
