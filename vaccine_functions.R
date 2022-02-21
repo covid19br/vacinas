@@ -59,7 +59,7 @@ doses_nomes <- function(x){
 #' @output_folder: character. Caminho para escrever os dados.
 #' @data_base: character. Data da base de dados, no formato %Y-%m-%d
 
-prepare_table <- function(estado, write.dose.types = TRUE,
+prepare_table <- function(estado,
                           input_folder = "dados/",
                           output_folder = "output/",
                           data_base = "2022-01-15",split = F) {
@@ -92,7 +92,7 @@ prepare_table <- function(estado, write.dose.types = TRUE,
         distinct(paciente_id,vacina_dataAplicacao,.keep_all = TRUE)
     
         write.csv(data.frame(table(todas_vacinas$vacina_descricao_dose)), 
-                  file = paste0(output_folder,estado,"_dose_types_log.csv"), quote = FALSE, row.names = FALSE)
+                  file = paste0(output_folder,"dose_types/",estado,"_dose_types_log.csv"), quote = FALSE, row.names = FALSE)
       
       # Substitute Dose names and transform into factor
       todas_vacinas$dose <- as.factor(sapply(todas_vacinas$vacina_descricao_dose,doses_nomes))
@@ -107,12 +107,11 @@ prepare_table <- function(estado, write.dose.types = TRUE,
       
       ##########################
       
-      tabela_vacinas <- todas_vacinas %>% 
+      todas_vacinas <- todas_vacinas %>% 
         filter(vacina_codigo %in% c(85,86,87,88)) %>% 
         select(-vacina_descricao_dose)
       
-      rm(todas_vacinas);gc()
-      colnames(tabela_vacinas) <- c("id", "nasc", "data","vacina","doses")
+      colnames(todas_vacinas) <- c("id", "nasc", "data","vacina","doses")
       
       todas_vacinas <- todas_vacinas %>% group_by(id) %>% mutate(n = n()) %>% ungroup() %>% filter(n < 5)
       
@@ -134,7 +133,7 @@ prepare_table <- function(estado, write.dose.types = TRUE,
       
       # Compute age at first dose
       
-      tabela_vacinas <- tabela_vacinas%>% 
+      todas_vacinas <- todas_vacinas%>% 
         group_by(id) %>% 
         mutate(nasc = min(nasc, na.rm = T)) %>%
         ungroup() %>%
@@ -142,7 +141,7 @@ prepare_table <- function(estado, write.dose.types = TRUE,
         select(-nasc)
       
       # Save data
-      fwrite(tabela_vacinas, file = paste0(output_folder, estado,"_",indice, "_PNI_clean.csv"))
+      fwrite(todas_vacinas, file = paste0(output_folder, estado,"_",indice, "_PNI_clean.csv"))
     }
   } else {
     todas_vacinas <- fread(paste0(input_folder,"limpo_dados_",data_base,"_",estado,".csv"), 
@@ -167,7 +166,7 @@ prepare_table <- function(estado, write.dose.types = TRUE,
       distinct(paciente_id,vacina_dataAplicacao,.keep_all = TRUE)
     
     write.csv(data.frame(table(todas_vacinas$vacina_descricao_dose)), 
-                file = paste0(output_folder,estado,"_dose_types_log.csv"), quote = FALSE, row.names = FALSE)
+                file = paste0(output_folder,"dose_types/",estado,"_dose_types_log.csv"), quote = FALSE, row.names = FALSE)
     
     # Substitute Dose names and transform into factor
     todas_vacinas$dose <- as.factor(sapply(todas_vacinas$vacina_descricao_dose,doses_nomes))
@@ -182,15 +181,13 @@ prepare_table <- function(estado, write.dose.types = TRUE,
     
     ##########################
     
-    tabela_vacinas <- todas_vacinas %>% 
+    todas_vacinas <- todas_vacinas %>% 
                       filter(vacina_codigo %in% c(85,86,87,88)) %>% 
-                      select(-dose)
+                      select(-vacina_descricao_dose)
     
-    tabela_vacinas <- todas_vacinas %>% filter(vacina_codigo %in% c(85,86,87,88)) %>% select(-vacina_descricao_dose)
-    rm(todas_vacinas);gc()
-    colnames(tabela_vacinas) <- c("id", "nasc", "data","vacina","doses")
+    colnames(todas_vacinas) <- c("id", "nasc", "data","vacina","doses")
     
-    tabela_vacinas <- tabela_vacinas %>% 
+    todas_vacinas <- todas_vacinas %>% 
                         group_by(id) %>%
                         mutate(n = n()) %>%
                         ungroup() %>%
@@ -215,7 +212,7 @@ prepare_table <- function(estado, write.dose.types = TRUE,
   
   # Compute age at first dose
   
-    tabela_vacinas <- tabela_vacinas%>% 
+    todas_vacinas <- todas_vacinas%>% 
       group_by(id) %>% 
       mutate(nasc = min(nasc, na.rm = T)) %>%
       ungroup() %>%
@@ -226,7 +223,7 @@ prepare_table <- function(estado, write.dose.types = TRUE,
     
     filename = paste0(output_folder, estado, "_PNI_clean.csv")
     print(paste0("Salvando: ", filename))
-    fwrite(tabela_vacinas, file = filename)
+    fwrite(todas_vacinas, file = filename)
   }
 }
 
@@ -244,6 +241,17 @@ prepare_table <- function(estado, write.dose.types = TRUE,
 #' @output_folder: character. Caminho para escrever os dados.
 #' 
 #' Details: a função salva as tabelas de output em um arquivo .csv
+#' Para o arquivo doses_aplicadas.csv, as faixas etárias são divididas de duas formas, em duas colunas:
+#' 
+#' ag_child: 0-4 anos, 5-11 anos, 12-17 anos, 18-29 anos, 
+#'                 30-39 anos, 40-49 anos, 50-59 anos, 60-69 anos,
+#'                 70-79 anos, 80-89 anos, 90 anos ou mais
+#'  Esta divisão leva em conta as divisões específicas para faixas etárias de crianças
+#'                                
+#' ag_10:             0-9 anos, 10-19 anos, 20-29 anos,
+#'                 30-39 anos, 40-49 anos, 50-59 anos, 60-69 anos,
+#'                 70-79 anos, 80-89 anos, 90 anos ou mais         
+#'
 
 prepara_historico <- function(estado = "SP", 
                               data_base = as.Date("2022-01-15"),
@@ -261,17 +269,17 @@ prepara_historico <- function(estado = "SP",
   for(j in 1:length(files)) {
   print(files[j])
     
-  tabela_vacinas <- fread(paste0(input_folder,files[j]), 
+  todas_vacinas <- fread(paste0(input_folder,files[j]), 
                           colClasses = c("id" = "factor",
                                          "data" = "character", "vacina" = "integer","n" = "integer",
                                          "doses" = "factor","idade" = "integer"), encoding = "UTF-8")
   
-  tabela_vacinas$data <- as.Date(tabela_vacinas$data)
+  todas_vacinas$data <- as.Date(todas_vacinas$data)
   
-  count_doses <- tabela_vacinas %>% group_by(id) %>% summarise(m = n())
-  tabela_vacinas <- tabela_vacinas %>% left_join(count_doses, by = "id")
+  #count_doses <- todas_vacinas %>% group_by(id) %>% summarise(m = n())
+  #todas_vacinas <- todas_vacinas %>% left_join(count_doses, by = "id")
   
-  pretabela <- tabela_vacinas %>% select(-n, -m) %>% #select(-id) %>% 
+  todas_vacinas <- todas_vacinas %>% select(-n) %>% #select(-id) %>% 
     filter(data > "2021-01-01") %>%
     filter(data <= data_base) %>%
     drop_na(vacina, idade, data, doses) %>%
@@ -282,27 +290,29 @@ prepara_historico <- function(estado = "SP",
                                  right = F,
                                  labels = F)),
            agegroup_10 = factor(cut(idade, 
-                                    breaks = c(0,5,12,18,seq(30,90,10),Inf),
+                                    breaks = c(seq(0,90,10),Inf),
                                     include.lowest = T, 
                                     right = F,
                                     labels = F)))
   
-  rm(tabela_vacinas);gc()
-  
-  tabela <- pretabela %>% count(vacina, agegroup, agegroup_10, data,doses, .drop = FALSE)
+  tabela <- todas_vacinas %>% count(vacina, agegroup,data,doses, .drop = FALSE) %>% mutate(type = "ag_child")
+  tabela2 <- todas_vacinas %>% count(vacina, agegroup_10,data,doses, .drop = FALSE) %>% mutate(type = "ag_10")
+  colnames(tabela2)[2] <- "agegroup"
+  tab <- bind_rows(tabela, tabela2) %>% 
+    spread(key = type, value = n) %>% 
+    arrange(data, agegroup, vacina, doses)
   
   filename = paste0(output_folder,"doses_aplicadas/doses_aplicadas_",estado,"_",j,".csv")
   
   print(filename)
-  fwrite(tabela, file= filename)
-  
+  fwrite(tab, file= filename)
 
   ### Preparar tabela em formato wide
   
-  tabela_id_idade <- pretabela %>% select(id, agegroup) %>% distinct()
+  tabela_id_idade <- todas_vacinas %>% select(id, agegroup) %>% distinct()
   
-    cut_points <- as.integer(c(seq(1,  nrow(pretabela), 3*10^6), nrow(pretabela)))
-  #cut_points <- as.integer(c(seq(1,  9*10^6, 3*10^6), nrow(pretabela)))
+    cut_points <- as.integer(c(seq(1,  nrow(todas_vacinas), 3*10^6), nrow(todas_vacinas)))
+  #cut_points <- as.integer(c(seq(1,  9*10^6, 3*10^6), nrow(todas_vacinas)))
   
     ini = Sys.time()
     
@@ -313,7 +323,7 @@ prepara_historico <- function(estado = "SP",
       
       print(c(i,j,cut_points[i]))
       
-      tabela_wide_split_temp <- pretabela[cut_points[i]:(cut_points[i+1]-1),] %>%
+      tabela_wide_split_temp <- todas_vacinas[cut_points[i]:(cut_points[i+1]-1),] %>%
         select(-agegroup, -idade) %>%
         pivot_wider(id_cols = id,
                     names_from = doses,
@@ -330,7 +340,7 @@ prepara_historico <- function(estado = "SP",
   fin = Sys.time()
   print(fin - ini)
   
-  rm(pretabela);gc()
+  rm(todas_vacinas);gc()
   
   filename = paste0(output_folder,"wide/wide_doses_aplicadas_",estado,"_",j,".csv")
   print(paste0("Salvando: ",filename))
@@ -349,17 +359,17 @@ prepara_historico <- function(estado = "SP",
     
   } else {
   
-  tabela_vacinas <- fread(paste0(input_folder,estado, "_PNI_clean.csv"), 
+  todas_vacinas <- fread(paste0(input_folder,estado, "_PNI_clean.csv"), 
                           colClasses = c("id" = "factor",
                                          "data" = "character", "vacina" = "integer","n" = "integer",
                                          "doses" = "factor","idade" = "integer"), encoding = "UTF-8")
     
-  tabela_vacinas$data <- as.Date(tabela_vacinas$data)
+  todas_vacinas$data <- as.Date(todas_vacinas$data)
     
-  count_doses <- tabela_vacinas %>% group_by(id) %>% summarise(m = n())
-  tabela_vacinas <- tabela_vacinas %>% left_join(count_doses, by = "id")
+  #count_doses <- todas_vacinas %>% group_by(id) %>% summarise(m = n())
+  #todas_vacinas <- todas_vacinas %>% left_join(count_doses, by = "id")
 
-  pretabela <- tabela_vacinas %>% select(-n, -m) %>% #select(-id) %>% 
+  todas_vacinas <- todas_vacinas %>% select(-n) %>% #select(-id) %>% 
     filter(data > "2021-01-01") %>%
     filter(data <= data_base) %>%
     drop_na(vacina, idade, data, doses) %>%
@@ -370,24 +380,27 @@ prepara_historico <- function(estado = "SP",
                                  right = F,
                                  labels = F)),
            agegroup_10 = factor(cut(idade, 
-                                    breaks = c(0,5,12,18,seq(30,90,10),Inf),
+                                    c(seq(0,90,10),Inf),
                                     include.lowest = T, 
                                     right = F,
                                     labels = F)))
   
-  rm(tabela_vacinas);gc()
-    
-  tabela <- pretabela %>% count(vacina, agegroup, agegroup_10, data,doses, .drop = FALSE)
+  tabela <- todas_vacinas %>% count(vacina, agegroup,data,doses, .drop = FALSE) %>% mutate(type = "ag_child")
+  tabela2 <- todas_vacinas %>% count(vacina, agegroup_10,data,doses, .drop = FALSE) %>% mutate(type = "ag_10")
+  colnames(tabela2)[2] <- "agegroup"
+  tab <- bind_rows(tabela, tabela2) %>% 
+    spread(key = type, value = n) %>% 
+    arrange(data, agegroup, vacina, doses)
   
   filename = paste0(output_folder,"doses_aplicadas/doses_aplicadas_",estado,".csv")
   
   print(paste0("Salvando: ",filename))
-  fwrite(tabela, file = filename)
+  fwrite(tab, file = filename)
   
 ### Wide  
-  tabela_id_idade <- pretabela %>% select(id, agegroup) %>% distinct()
+  tabela_id_idade <- todas_vacinas %>% select(id, agegroup) %>% distinct()
     
-  tabela_wide = pretabela %>%
+  tabela_wide = todas_vacinas %>%
     select(-agegroup, -idade) %>%
     pivot_wider(id_cols = id,
                 names_from = doses,
@@ -398,7 +411,7 @@ prepara_historico <- function(estado = "SP",
               na_matches = "never") %>%
     select(-id)
   
-  rm(pretabela);gc()
+  rm(todas_vacinas);gc()
   
   filename = paste0(output_folder,"wide/wide_doses_aplicadas_",estado,".csv")
   print(paste0("Salvando: ",filename))
@@ -461,8 +474,8 @@ join_historico <- function(estado = "SP",
   
   # Sum values according to groups
   tabela <- doses_aplicadas %>%
-    group_by(vacina, agegroup, agegroup_10, data,doses, .drop = FALSE) %>%
-    summarise(n = sum(n))
+    group_by(vacina, ag_10, ag_child, data,doses, .drop = FALSE) %>%
+    summarise(n = sum(n, na.rm = T))
   
   # Save aggregated data
   filename = paste0(output_folder,"doses_aplicadas/doses_aplicadas_",estado,".csv")
@@ -565,7 +578,7 @@ plot_proportion <- function(estado, distribuicao_etaria,
                             return = TRUE,
                             data_base = '2021-07-27'){
   
-  tabela_vacinas <- fread(paste0(input_folder, estado, "_PNI_clean.csv"), 
+  todas_vacinas <- fread(paste0(input_folder, estado, "_PNI_clean.csv"), 
                           colClasses = c("id" = "factor", "nasc" = "Date",
                                          "categoria" = "integer", "data" = "Date",
                                          "doses" = "factor"))
@@ -573,7 +586,7 @@ plot_proportion <- function(estado, distribuicao_etaria,
   
   ##########################
   
-  D1 <- tabela_vacinas %>% filter(doses == "D1")
+  D1 <- todas_vacinas %>% filter(doses == "D1")
   D1 <- D1 %>% select(-id) %>% 
     #filter(categoria == 2) %>% 
     #filter(idade > 50 & idade < 90)
@@ -608,7 +621,7 @@ plot_proportion <- function(estado, distribuicao_etaria,
   rm(D1);gc()
   ### Second dose
   
-  D2 <- tabela_vacinas %>% filter(doses %in% c("D2","2ª Dose"))
+  D2 <- todas_vacinas %>% filter(doses %in% c("D2","2ª Dose"))
   D2 <- D2 %>% select(-id) %>% 
     #filter(categoria == 2) %>% 
     #filter(idade > 50 & idade < 90)
