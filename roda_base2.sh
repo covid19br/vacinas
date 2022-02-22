@@ -12,7 +12,7 @@ DADOS=$METAREPO/dados/vacinas
 ## PROCESSAMENTO DE OPÇÕES DE LINHA DE COMANDO
 
 usage(){
-    echo "USO: $0 [-hdocpga]"
+    echo "USO: $0 [-hdocpgram]"
     echo -e "\nBaixa dados do SI-PNI, limpa, processa, e atualiza o repositório de dados processados.\n"
     echo -e "  Opções:\n"
     echo -e "    -h help"
@@ -41,7 +41,7 @@ process=
 gitupdate=
 remove=
 mail=
-while getopts "hdocpga" opt; do
+while getopts "hdocpgram" opt; do
     case "$opt" in
     h)
         usage
