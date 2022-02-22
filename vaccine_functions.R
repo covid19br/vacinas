@@ -80,7 +80,7 @@ prepare_table <- function(estado,
                              encoding = "UTF-8") %>%
         data.frame()
       
-      print(paste0(state, " data succesfully loaded. Preparing data... 1"))
+      print(paste0(estado, " data succesfully loaded. Preparing data... 1"))
       
       indice = indice+1
       todas_vacinas$vacina_codigo[todas_vacinas$vacina_codigo == 89] <- 85
@@ -155,7 +155,7 @@ prepare_table <- function(estado,
                            encoding = "UTF-8") %>%
                            data.frame()
     
-    print(paste0(state, " data succesfully loaded. Preparing data... 1"))
+    print(paste0(estado, " data succesfully loaded. Preparing data... 1"))
     
     todas_vacinas$vacina_codigo[todas_vacinas$vacina_codigo == 89] <- 85
     
