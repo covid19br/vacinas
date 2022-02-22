@@ -432,15 +432,15 @@ prepara_historico <- function(estado = "SP",
   
   ### Histórico apenas dos que necessitam de dose de reforço
   
-  if("vacina_DA" %in% colnames(tabela_wide_split)) {
+  if("vacina_DA" %in% colnames(tabela_wide)) {
     
-    reforco <- tabela_wide_split %>%
+    reforco <- tabela_wide %>%
       filter(!is.na(data_D2) & is.na(data_R) & is.na(vacina_D) & is.na(vacina_DA)) %>%
       count(data_D2, vacina_D2, agegroup) 
     
   } else {
     
-    reforco <- tabela_wide_split %>%
+    reforco <- tabela_wide %>%
       filter(!is.na(data_D2) & is.na(data_R) & is.na(vacina_D)) %>%
       count(data_D2, vacina_D2, agegroup)   
   }
