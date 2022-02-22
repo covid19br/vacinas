@@ -208,7 +208,7 @@ prepare_table <- function(estado,
       
     } else {
       
-      write.csv(contagem_dose_todos, file = paste0(output_folder,"dose_types/",filename))
+      write.csv(contagem_dose, file = paste0(output_folder,"dose_types/",filename))
     }
     
     # Clean Data
