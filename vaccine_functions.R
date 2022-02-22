@@ -90,12 +90,30 @@ prepare_table <- function(estado,
       todas_vacinas <- todas_vacinas %>% 
         distinct(paciente_id,vacina_descricao_dose,.keep_all = TRUE) %>% 
         distinct(paciente_id,vacina_dataAplicacao,.keep_all = TRUE)
-    
-        write.csv(data.frame(table(todas_vacinas$vacina_descricao_dose)), 
-                  file = paste0(output_folder,"dose_types/",estado,"_dose_types_log.csv"), quote = FALSE, row.names = FALSE)
-      
+  
       # Substitute Dose names and transform into factor
       todas_vacinas$dose <- as.factor(sapply(todas_vacinas$vacina_descricao_dose,doses_nomes))
+      
+      # Save log for dose types and classification
+      data_base_title <- format(as.Date(data_base), format = "%Y_%m_%d")
+      filename <- paste0("doses_", data_base_title,".csv")
+      
+      contagem_dose <- todas_vacinas %>% count(vacina_descricao_dose, dose) %>% mutate(UF = estado)
+      
+      if(any(grepl(data_base_title, list.files(paste0(output_folder,"dose_types/"))))) {
+        
+        contagem_dose_todos <- read.csv(paste0(output_folder,"dose_types/",filename))
+        contagem_dose_todos <- bind_rows(contagem_dose_todos, contagem_dose)
+        contagem_dose_todos <- contagem_dose_todos %>% 
+          group_by(vacina_descricao_dose, dose, UF) %>%
+          summarise(n = sum(n))
+        
+        write.csv(contagem_dose_todos, file = paste0(output_folder,"dose_types/",filename))
+        
+      } else {
+        
+        write.csv(contagem_dose_todos, file = paste0(output_folder,"dose_types/",filename))
+      }
       
       # Clean data
       todas_vacinas <- todas_vacinas %>% filter(vacina_dataAplicacao < as.Date(data_base) & vacina_dataAplicacao > as.Date("2021-01-17"))
@@ -169,11 +187,29 @@ prepare_table <- function(estado,
       distinct(paciente_id,vacina_descricao_dose,.keep_all = TRUE) %>% 
       distinct(paciente_id,vacina_dataAplicacao,.keep_all = TRUE)
     
-    write.csv(data.frame(table(todas_vacinas$vacina_descricao_dose)), 
-                file = paste0(output_folder,"dose_types/",estado,"_dose_types_log.csv"), quote = FALSE, row.names = FALSE)
-    
     # Substitute Dose names and transform into factor
     todas_vacinas$dose <- as.factor(sapply(todas_vacinas$vacina_descricao_dose,doses_nomes))
+    
+    # Save log for dose types and classification
+    data_base_title <- format(as.Date(data_base), format = "%Y_%m_%d")
+    filename <- paste0("doses_", data_base_title,".csv")
+    
+    contagem_dose <- todas_vacinas %>% count(vacina_descricao_dose, dose) %>% mutate(UF = estado)
+    
+    if(any(grepl(data_base_title, list.files(paste0(output_folder,"dose_types/"))))) {
+      
+      contagem_dose_todos <- read.csv(paste0(output_folder,"dose_types/",filename))
+      contagem_dose_todos <- bind_rows(contagem_dose_todos, contagem_dose)
+      contagem_dose_todos <- contagem_dose_todos %>% 
+        group_by(vacina_descricao_dose, dose, UF) %>%
+        summarise(n = sum(n))
+      
+      write.csv(contagem_dose_todos, file = paste0(output_folder,"dose_types/",filename))
+      
+    } else {
+      
+      write.csv(contagem_dose_todos, file = paste0(output_folder,"dose_types/",filename))
+    }
     
     # Clean Data
     todas_vacinas <- todas_vacinas %>% filter(vacina_dataAplicacao < as.Date(data_base) & vacina_dataAplicacao >= as.Date("2021-01-17"))
