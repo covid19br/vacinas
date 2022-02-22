@@ -350,9 +350,18 @@ prepara_historico <- function(estado = "SP",
   print(paste0("Salvando: ",filename))
   fwrite(tabela_wide_split, file = filename)
   
-  reforco <- tabela_wide_split %>%
-    filter(!is.na(data_D2) & is.na(data_R) & is.na(vacina_D) & is.na(vacina_DA) & is.na(vacina_3) & is.na(vacina_4)) %>%
-    count(data_D2, vacina_D2, agegroup)
+  if("vacina_DA" %in% colnames(tabela_wide_split)) {
+    
+    reforco <- tabela_wide_split %>%
+                  filter(!is.na(data_D2) & is.na(data_R) & is.na(vacina_D) & is.na(vacina_DA)) %>%
+                  count(data_D2, vacina_D2, agegroup) 
+  
+  } else {
+    
+   reforco <- tabela_wide_split %>%
+                  filter(!is.na(data_D2) & is.na(data_R) & is.na(vacina_D)) %>%
+                  count(data_D2, vacina_D2, agegroup)   
+    }
 
   reforco <- reforco %>% mutate(dif = as.integer(as.Date(Sys.time()) - data_D2)) %>% select(-n)
 
@@ -423,11 +432,18 @@ prepara_historico <- function(estado = "SP",
   
   ### Histórico apenas dos que necessitam de dose de reforço
   
-  reforco <- tabela_wide %>%
-    filter(!is.na(data_D2) & is.na(data_R) & is.na(vacina_D) & is.na(vacina_DA) & is.na(vacina_3) & is.na(vacina_4)) %>%
-    count(data_D2, vacina_D2, agegroup) #%>%
-  #count(data_D1, data_D2, data_R, data_DU, vacina_D1, vacina_D2, vacina_R, vacina_DU, agegroup) %>%
-  #filter(vacina_DU == "Janssen" & !is.na(vacina_D2)) # Remove casos em que D1 é Janssen e D2 é outra marca
+  if("vacina_DA" %in% colnames(tabela_wide_split)) {
+    
+    reforco <- tabela_wide_split %>%
+      filter(!is.na(data_D2) & is.na(data_R) & is.na(vacina_D) & is.na(vacina_DA)) %>%
+      count(data_D2, vacina_D2, agegroup) 
+    
+  } else {
+    
+    reforco <- tabela_wide_split %>%
+      filter(!is.na(data_D2) & is.na(data_R) & is.na(vacina_D)) %>%
+      count(data_D2, vacina_D2, agegroup)   
+  }
   
   reforco <- reforco %>% mutate(dif = as.integer(as.Date(Sys.time()) - data_D2)) %>% select(-n)
   
