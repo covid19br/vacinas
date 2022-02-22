@@ -113,7 +113,11 @@ prepare_table <- function(estado,
       
       colnames(todas_vacinas) <- c("id", "nasc", "data","vacina","doses")
       
-      todas_vacinas <- todas_vacinas %>% group_by(id) %>% mutate(n = n()) %>% ungroup() %>% filter(n < 5)
+      todas_vacinas <- todas_vacinas %>% 
+                          group_by(id) %>% 
+                          mutate(n = n()) %>% 
+                          ungroup() %>% 
+                          filter(n < 5)
       
       # Filter if it has more than one dose type per ID
       remove_ids <- todas_vacinas %>% 
@@ -133,7 +137,7 @@ prepare_table <- function(estado,
       
       # Compute age at first dose
       
-      todas_vacinas <- todas_vacinas%>% 
+      todas_vacinas <- todas_vacinas %>% 
         group_by(id) %>% 
         mutate(nasc = min(nasc, na.rm = T)) %>%
         ungroup() %>%
@@ -191,7 +195,7 @@ prepare_table <- function(estado,
                         group_by(id) %>%
                         mutate(n = n()) %>%
                         ungroup() %>%
-                        filter(n < 5) %>%
+                        filter(n < 5)
     
     # Filter if it has more than one dose type per ID
       
