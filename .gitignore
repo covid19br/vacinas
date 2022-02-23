@@ -45,3 +45,6 @@ vignettes/*.pdf
 /dados/*dados_*.csv
 /dados/split_sorted_limpo_dados*.csv
 /output/
+
+# privado
+/emails.txt
