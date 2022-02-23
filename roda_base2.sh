@@ -9,6 +9,10 @@ cd $dir
 METAREPO=`readlink -f ..`
 DADOS=$METAREPO/dados/vacinas
 
+# estados que splitam
+estados_split=("SP")
+NSPLIT=4
+
 ## PROCESSAMENTO DE OPÇÕES DE LINHA DE COMANDO
 
 usage(){
@@ -128,9 +132,6 @@ if [ $process ]; then
         echo "state ${estado} done"
     done
     
-    ######estados que splitam
-    estados_split=("SP")
-    
     for estado in "${estados_split[@]}"; do
         pushd dados/
         echo "sorting state ${estado} in $PWD folder"
@@ -138,8 +139,8 @@ if [ $process ]; then
         echo "done"
     
         echo "spliting state ${estado} in $PWD folder"
-        ./split_file.sh sorted_limpo_dados_${lastdate}_${estado}.csv 4 &&
-          rm sorted_limpo_dados_${lastdate}_${estado}.csv
+        ./split_file.sh sorted_limpo_dados_${lastdate}_${estado}.csv $NSPLIT &&
+          rm -v sorted_limpo_dados_${lastdate}_${estado}.csv
         echo "done"
         popd
     
@@ -168,11 +169,29 @@ if [ $process ]; then
     echo "counting doses for all states"
     Rscript contar_doses_por_estado.R
     echo "done"
+
+    # limpando arquivos quebrados
+    for estado in "${estados_split[@]}"; do
+        if [ -s "output/wide/wide_doses_aplicadas_${estado}.csv" ] &&
+           [ "output/wide/wide_doses_aplicadas_${estado}.csv" -nt "output/wide/wide_doses_aplicadas_${estado}_${NSPLIT}.csv" ]; then
+            rm -v output/${estado}_*_PNI_clean.csv
+            rm -v output/wide/wide_doses_aplicadas_${estado}_*.csv
+        fi
+        if [ -s "output/doses_aplicadas/doses_aplicadas_${estado}.csv" ] &&
+           [ "output/doses_aplicadas/doses_aplicadas_${estado}.csv" -nt "output/doses_aplicadas/doses_aplicadas_${estado}_${NSPLIT}.csv" ] ; then
+            rm -v output/doses_aplicadas/doses_aplicadas_${estado}_*.csv
+        fi
+        if [ -s "output/reforco/tempo_d2_reforco_${estado}.csv" ] &&
+           [ "output/reforco/tempo_d2_reforco_${estado}.csv" -nt "output/reforco/tempo_d2_reforco_${estado}_${NSPLIT}.csv" ] ; then
+            rm -v output/reforco/tempo_d2_reforco_${estado}_*.csv
+        fi
+    done
 fi
 
 if [ $remove ]; then
     echo "== Removendo arquivos baixados e limpos"
     rm -v dados/dados_${lastdate}_*.csv dados/limpo_dados_${lastdate}_*.csv
+    rm -v dados/split_sorted_limpo_dados_${lastdate}_*_*.csv
 fi
 
 if [ $gitupdate ]; then
