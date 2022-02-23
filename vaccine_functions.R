@@ -507,8 +507,7 @@ prepara_historico <- function(estado = "SP",
 #' de cada dose por indivíduo (id), apenas para aqueles que receberam a segunda dose mas
 #' não receberam a dose de reforço 
 
-join_historico <- function(estado = "SP", 
-                           data_base = as.Date("2022-01-15"),
+join_historico <- function(estado = "SP",
                            input_folder = "output/",
                            output_folder = "output/") {
 
@@ -779,7 +778,7 @@ if (sys.nframe() == 0L) {
   } else if (command == "prepara_cobertura_split") {
     prepara_historico(estado, data_base = dataBase, split = split,
                       input_folder = output_folder, output_folder = output_folder)
-    join_historico(estado, data_base = dataBase,
+    join_historico(estado,
                    input_folder = output_folder, output_folder = output_folder)
   } else {
     print(paste("Comando", command, "não encontrado."))
