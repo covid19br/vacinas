@@ -113,9 +113,10 @@ if [ $clean ]; then
 fi
 
 if [ $process ]; then
+    lastdate=`ls dados/dados_*.csv | grep -oP "20\d{2}-\d{2}-\d{2}" | sort -r | head -n1`
+
     echo "== Processando base SI-PNI de ${lastdate} =="
 
-    lastdate=`ls dados/dados_*.csv | grep -oP "20\d{2}-\d{2}-\d{2}" | sort -r | head -n1`
     #######estados que não splitam
     estados=("AC" "AL" "AM" "AP" "BA" "CE" "DF" "ES" "GO" "MA" "MG" "MS" "MT" "PA" "PB" "PE" "PI" "PR" "RJ" "RN" "RO" "RR" "RS" "SC" "SE" "TO")
 
@@ -171,7 +172,7 @@ fi
 
 if [ $remove ]; then
     echo "== Removendo arquivos baixados e limpos"
-    rm -v dados/dados_${lastdate}.csv dados/limpo_dados_${lastdate}.csv
+    rm -v dados/dados_${lastdate}_*.csv dados/limpo_dados_${lastdate}_*.csv
 fi
 
 if [ $gitupdate ]; then
@@ -187,9 +188,10 @@ if [ $gitupdate ]; then
     git add "doses_serie_temporal.csv" "doses_por_estado.csv"
     popd
 	
-    cd $DADOS
+    pushd $DADOS
     git commit -m ":robot: atualizando dados processados SI-PNI ${lastdate}" &&
         git push
+    popd
 fi
 
 if [ $mail ]; then
