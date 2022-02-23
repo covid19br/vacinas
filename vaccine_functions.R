@@ -530,8 +530,9 @@ join_historico <- function(estado = "SP",
   
   # Sum values according to groups
   tabela <- doses_aplicadas %>%
-    group_by(vacina, ag_10, ag_child, data,doses, .drop = FALSE) %>%
-    summarise(n = sum(n, na.rm = T))
+    group_by(vacina, agegroup, data, doses, .drop = FALSE) %>%
+    summarise(ag_10    = sum(ag_10, na.rm = T),
+              ag_child = sum(ag_child, na.rm = T))
   
   # Save aggregated data
   filename = paste0(output_folder,"doses_aplicadas/doses_aplicadas_",estado,".csv")
@@ -564,7 +565,7 @@ join_historico <- function(estado = "SP",
   ### data_D2, vacina_D2, agegroup, n, dif  
   
   reforco <- wide_doses %>%
-    filter(!is.na(data_D2) & is.na(data_R) & is.na(data_DU)) %>%
+    filter(!is.na(data_D2) & is.na(data_R) & is.na(data_D) & is.na(data_3) & is.na(data_DA)) %>%
     count(data_D2, vacina_D2, agegroup)  %>% 
     mutate(dif = as.integer(as.Date(Sys.time()) - as.Date(data_D2)))
   
