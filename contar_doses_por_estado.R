@@ -5,10 +5,10 @@ if(!require(tidyverse)){install.packages("tidyverse"); library(tidyverse)}
 
 #' Este script classifica todas as combinações de aplicações de doses encontradas no SI-PNI para um mesmo id
 #' Em seguida, encontra a data de aplicação das doses para os seguintes grupos:
-#' D1: id's de indivíduos que tomaram APENAS a primeira dose, para vacina que não seja Janssen
-#' DU: id's de indivíduos que tomaram Janssen como a primeira dose, independente de tomarem outras 
+#' D1: id's de indivíDos que tomaram APENAS a primeira dose, para vacina que não seja Janssen
+#' D: id's de indivíDos que tomaram Janssen como a primeira dose, independente de tomarem outras 
 #'     doses ou reforços posteriormente
-#' D2: id's de todos os outros casos. Inclui indivíduos que tomaram a Dose 2, com ou sem reforço, 
+#' D2: id's de todos os outros casos. Inclui indivíDos que tomaram a Dose 2, com ou sem reforço, 
 #'     desde que a D1 não seja da marca Janssen.
 
 ### Functions
@@ -48,11 +48,11 @@ for(i in files) {
   print(state)
   
   df <- data.frame(fread(paste0("output/wide/",i),
-              select = c("data_D1","data_R","data_D2","data_DU","agegroup"),
+              select = c("data_D1","data_R","data_D2","data_D","agegroup"),
               colClasses = c("data_D1" = "Date",
                              "data_R" = "Date",
                              "data_D2" = "Date",
-                             "data_DU" = "Date")))
+                             "data_D" = "Date")))
                          
         
   df[df==""] <- NA
@@ -61,38 +61,38 @@ for(i in files) {
   df$dose <- ""
   
   df$dose[!is.na(df$data_R)] <- "R"
-  df$dose[!is.na(df$data_DU)] <- "DU"
-  df$dose[!is.na(df$data_R) &  !is.na(df$data_DU)] <- "R+DU"
-  df$dose[ is.na(df$data_D1) &  is.na(df$data_D2) &  is.na(df$data_R) & !is.na(df$data_DU)] <- "DU only"
-  df$dose[!is.na(df$data_D1) & !is.na(df$data_D2) &  is.na(df$data_R) &  is.na(df$data_DU)] <- "(D1+D2) only"
-  df$dose[!is.na(df$data_D1) &  is.na(df$data_D2) & !is.na(df$data_R) &  is.na(df$data_DU)] <- "(D1+R) only"
-  df$dose[ is.na(df$data_D1) & !is.na(df$data_D2) & !is.na(df$data_R) &  is.na(df$data_DU)] <- "(D2+R) only"
-  df$dose[ is.na(df$data_D1) &  is.na(df$data_D2) & !is.na(df$data_R) & !is.na(df$data_DU)] <- "(R+DU) only"
+  df$dose[!is.na(df$data_D)] <- "D"
+  df$dose[!is.na(df$data_R) &  !is.na(df$data_D)] <- "R+D"
+  df$dose[ is.na(df$data_D1) &  is.na(df$data_D2) &  is.na(df$data_R) & !is.na(df$data_D)] <- "D only"
+  df$dose[!is.na(df$data_D1) & !is.na(df$data_D2) &  is.na(df$data_R) &  is.na(df$data_D)] <- "(D1+D2) only"
+  df$dose[!is.na(df$data_D1) &  is.na(df$data_D2) & !is.na(df$data_R) &  is.na(df$data_D)] <- "(D1+R) only"
+  df$dose[ is.na(df$data_D1) & !is.na(df$data_D2) & !is.na(df$data_R) &  is.na(df$data_D)] <- "(D2+R) only"
+  df$dose[ is.na(df$data_D1) &  is.na(df$data_D2) & !is.na(df$data_R) & !is.na(df$data_D)] <- "(R+D) only"
   
-  df$dose[!is.na(df$data_D1) & !is.na(df$data_D2) &  is.na(df$data_R) & !is.na(df$data_DU)] <- "(D1+D2+DU) only"
-  df$dose[!is.na(df$data_D1) &  is.na(df$data_D2) &  is.na(df$data_R) & !is.na(df$data_DU)] <- "(D1+DU) only"
-  df$dose[ is.na(df$data_D1) & !is.na(df$data_D2) &  is.na(df$data_R) & !is.na(df$data_DU)] <- "(D2+DU) only"
+  df$dose[!is.na(df$data_D1) & !is.na(df$data_D2) &  is.na(df$data_R) & !is.na(df$data_D)] <- "(D1+D2+D) only"
+  df$dose[!is.na(df$data_D1) &  is.na(df$data_D2) &  is.na(df$data_R) & !is.na(df$data_D)] <- "(D1+D) only"
+  df$dose[ is.na(df$data_D1) & !is.na(df$data_D2) &  is.na(df$data_R) & !is.na(df$data_D)] <- "(D2+D) only"
   
-  df$dose[!is.na(df$data_D1) & !is.na(df$data_D2) & !is.na(df$data_R) &  is.na(df$data_DU)] <- "(D1+D2+R) only"
-  df$dose[!is.na(df$data_D1) &  is.na(df$data_D2) &  is.na(df$data_R) &  is.na(df$data_DU)] <- "D1 only"
-  df$dose[ is.na(df$data_D1) & !is.na(df$data_D2) &  is.na(df$data_R) &  is.na(df$data_DU)] <- "D2 only"
-  df$dose[ is.na(df$data_D1) &  is.na(df$data_D2) & !is.na(df$data_R) &  is.na(df$data_DU)] <- "DR only"
+  df$dose[!is.na(df$data_D1) & !is.na(df$data_D2) & !is.na(df$data_R) &  is.na(df$data_D)] <- "(D1+D2+R) only"
+  df$dose[!is.na(df$data_D1) &  is.na(df$data_D2) &  is.na(df$data_R) &  is.na(df$data_D)] <- "D1 only"
+  df$dose[ is.na(df$data_D1) & !is.na(df$data_D2) &  is.na(df$data_R) &  is.na(df$data_D)] <- "D2 only"
+  df$dose[ is.na(df$data_D1) &  is.na(df$data_D2) & !is.na(df$data_R) &  is.na(df$data_D)] <- "DR only"
   
-  df$dose[ is.na(df$data_D1) & !is.na(df$data_D2) &  !is.na(df$data_R) & !is.na(df$data_DU)] <- "(D2+R+DU) only"
+  df$dose[ is.na(df$data_D1) & !is.na(df$data_D2) &  !is.na(df$data_R) & !is.na(df$data_D)] <- "(D2+R+D) only"
   
-  df$dose[!is.na(df$data_D1) & !is.na(df$data_D2) & !is.na(df$data_R) & !is.na(df$data_DU)] <- "D1+D2+DU+R"
+  df$dose[!is.na(df$data_D1) & !is.na(df$data_D2) & !is.na(df$data_R) & !is.na(df$data_D)] <- "D1+D2+D+R"
   
-  df$min_date <- (df$data_DU %mNA% df$data_D1) & (df$data_DU %mNA% df$data_D2) & (df$data_DU %mNA% df$data_R)
+  df$min_date <- (df$data_D %mNA% df$data_D1) & (df$data_D %mNA% df$data_D2) & (df$data_D %mNA% df$data_R)
   
   df$status <- "D2"
-  df$status[grepl("DU",df$dose) & df$min_date] <- "DU"
+  df$status[grepl("D",df$dose) & df$min_date] <- "D"
   df$status[grepl("D1 only",df$dose)] <- "D1"
   
   df$data <- NA
   df <- as.data.frame(df)
   df$data[df$status == "D2"] <- df[df$status == "D2","data_D2"]
   df$data[df$status == "D1"] <- df[df$status == "D1","data_D1"]
-  df$data[df$status == "DU"] <- df[df$status == "DU","data_DU"]
+  df$data[df$status == "D"] <- df[df$status == "D","data_D"]
   df$data <- as.Date(df$data)
   
   df$agegroup <- factor(df$agegroup)
