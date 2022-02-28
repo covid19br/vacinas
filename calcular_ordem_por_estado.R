@@ -97,7 +97,7 @@ for(i in files) {
   if(!any(grepl("DA",colnames(df)))) df$data_DA <- NA
   
   df <- df %>%
-          mutate_at(vars(contains('data_')), ~as.Date(.)) %>% str()
+          mutate_at(vars(contains('data_')), ~as.Date(.))
 
   
   df[df==""] <- NA
