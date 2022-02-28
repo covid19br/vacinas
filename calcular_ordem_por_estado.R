@@ -90,22 +90,15 @@ for(i in files) {
   
   # Load table for each state in wide format
   
-  df <- data.frame(fread(paste0("output/wide/",i),
-                         select = c("data_D",
-                                    "data_D1",
-                                    "data_D2",
-                                    "data_DA",
-                                    "data_R",
-                                    "data_3",
-                                    "data_4",
-                                    "agegroup"),
-                         colClasses = c("data_D1" = "Date",
-                                        "data_D2" = "Date",
-                                        "data_3" = "Date",
-                                        "data_4" = "Date",
-                                        "data_R" = "Date",
-                                        "data_D" = "Date",
-                                        "data_DA" = "Date")))
+  df <- data.frame(fread(paste0("output/wide/",i))) 
+  
+  if(!any(grepl("3",colnames(df)))) df$data_3 <- NA
+  if(!any(grepl("4",colnames(df)))) df$data_4 <- NA
+  if(!any(grepl("DA",colnames(df)))) df$data_DA <- NA
+  
+  df <- df %>%
+          mutate_at(vars(contains('data_')), ~as.Date(.)) %>% str()
+
   
   df[df==""] <- NA
   df$agegroup <- factor(df$agegroup, levels = c(1:11))
