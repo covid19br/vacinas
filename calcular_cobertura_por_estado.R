@@ -172,6 +172,7 @@ for(i in files) {
               mutate(month = as.Date(beginning.of.month(as.character(data)))) %>%
               group_by(month, agegroup, dose) %>% 
               summarise(total = sum(n, na.rm = T)) %>%
+              ungroup() %>%
               spread(key = dose, value = total) %>%
               complete(month = seq.Date(min(month), max(month), by="month"), agegroup,
                        fill = list(D1 = 0, D2 = 0, D = 0, D2f = 0)) %>%
@@ -192,6 +193,7 @@ for(i in files) {
     mutate(week = end.of.epiweek(data)) %>%
     group_by(week, agegroup, dose) %>% 
     summarise(total = sum(n, na.rm = T)) %>%
+    ungroup() %>%
     spread(key = dose, value = total) %>%
     complete(week = seq.Date(min(week), max(week), by= "week"), agegroup,
              fill = list(D1 = 0, D2 = 0, D = 0, D2f = 0)) %>%
