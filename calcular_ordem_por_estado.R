@@ -126,6 +126,6 @@ for(i in files) {
 fin = Sys.time()
 fin - ini
 
-fwrite(da_order, file = "output/doses_ordem_uf.csv")
+fwrite(da_order, file = "output/doses_ordem_completa_uf.csv")
 
 
