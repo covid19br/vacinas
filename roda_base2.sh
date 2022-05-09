@@ -207,6 +207,16 @@ if [ $gitupdate ]; then
     git add "doses_serie_temporal.csv" "doses_por_estado.csv"
     popd
 	
+	cp "output/doses_ordem_uf.csv" "output/doses_cobertura_proporcao_semana.csv" "output/doses_cobertura_proporcao_mes.csv" $DADOS/
+    pushd $DADOS
+    git add "doses_ordem_uf.csv" "doses_cobertura_proporcao_semana.csv" "doses_cobertura_proporcao_mes.csv"
+    popd
+	
+	cp "figuras/aplicacao_doses_uf_week.png" "figuras/aplicacao_doses_prop_week.png" "figuras/aplicacao_doses_uf_mes.png" "figuras/aplicacao_doses_prop_mes.png" $DADOS/figuras/
+    pushd $DADOS
+    git add "figuras/aplicacao_doses_uf_week.png" "figuras/aplicacao_doses_prop_week.png" "figuras/aplicacao_doses_uf_mes.png" "figuras/aplicacao_doses_prop_mes.png"
+    popd
+	
     pushd $DADOS
     git commit -m ":robot: atualizando dados processados SI-PNI ${lastdate}" &&
         git push
