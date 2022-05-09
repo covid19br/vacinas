@@ -197,7 +197,7 @@ for(i in files) {
               summarise(total = sum(n, na.rm = T)) %>%
               ungroup() %>%
               spread(key = dose, value = total) %>%
-              complete(month = seq.Date(min(month), as.Date(beginning.of.month(data_base)), by="month"), agegroup,
+              complete(month = seq.Date(min(month), as.Date(beginning.of.month(as.character(data_base))), by="month"), agegroup,
                        fill = list(D1 = 0, D2 = 0, D = 0, D2f = 0)) %>%
               distinct() %>%
               mutate(D1 = D1 - D2,
