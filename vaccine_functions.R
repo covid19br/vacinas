@@ -30,6 +30,10 @@ doses_nomes <- function(x){
     return("4")
   }
   
+  if(grepl("5",x)){
+    return("5")
+  }
+  
   if(grepl("^Dose$",x,ignore.case = T)){
     return("D")
   }
@@ -62,7 +66,7 @@ doses_nomes <- function(x){
 prepare_table <- function(estado,
                           input_folder = "dados/",
                           output_folder = "output/",
-                          data_base = "2022-01-15",split = F) {
+                          data_base = "2022-02-02",split = F) {
   if(split){
     pattern <- paste0("split_sorted_limpo_dados_",data_base,"_",estado)
     arquivos <- list.files(input_folder,pattern)
@@ -84,6 +88,8 @@ prepare_table <- function(estado,
       
       indice = indice+1
       todas_vacinas$vacina_codigo[todas_vacinas$vacina_codigo == 89] <- 85
+      todas_vacinas$vacina_codigo[todas_vacinas$vacina_codigo == 98] <- 86
+      todas_vacinas$vacina_codigo[todas_vacinas$vacina_codigo == 99] <- 87
       
       todas_vacinas$paciente_id <- factor(as.numeric(todas_vacinas$paciente_id))
       
@@ -135,7 +141,7 @@ prepare_table <- function(estado,
                           group_by(id) %>% 
                           mutate(n = n()) %>% 
                           ungroup() %>% 
-                          filter(n < 5)
+                          filter(n < 6)
       
       # Filter if it has more than one dose type per ID
       remove_ids <- todas_vacinas %>% 
@@ -180,6 +186,8 @@ prepare_table <- function(estado,
     print(paste0(estado, " data succesfully loaded. Preparing data... 1"))
     
     todas_vacinas$vacina_codigo[todas_vacinas$vacina_codigo == 89] <- 85
+    todas_vacinas$vacina_codigo[todas_vacinas$vacina_codigo == 98] <- 86
+    todas_vacinas$vacina_codigo[todas_vacinas$vacina_codigo == 99] <- 87
     
     todas_vacinas$paciente_id <- factor(as.numeric(todas_vacinas$paciente_id))
     
@@ -231,7 +239,7 @@ prepare_table <- function(estado,
                         group_by(id) %>%
                         mutate(n = n()) %>%
                         ungroup() %>%
-                        filter(n < 5)
+                        filter(n < 6)
     
     # Filter if it has more than one dose type per ID
       
@@ -386,24 +394,26 @@ prepara_historico <- function(estado = "SP",
   print(paste0("Salvando: ",filename))
   fwrite(tabela_wide_split, file = filename)
   
-  if("vacina_DA" %in% colnames(tabela_wide_split)) {
-    
-    reforco <- tabela_wide_split %>%
-                  filter(!is.na(data_D2) & is.na(data_R) & is.na(vacina_D) & is.na(vacina_DA)) %>%
-                  count(data_D2, vacina_D2, agegroup) 
+  ### Histórico apenas dos que necessitam de dose de reforço
   
-  } else {
-    
-   reforco <- tabela_wide_split %>%
-                  filter(!is.na(data_D2) & is.na(data_R) & is.na(vacina_D)) %>%
-                  count(data_D2, vacina_D2, agegroup)   
-    }
-
-  reforco <- reforco %>% mutate(dif = as.integer(as.Date(Sys.time()) - data_D2)) %>% select(-n)
-
-  filename = paste0(output_folder,"reforco/tempo_d2_reforco_",estado,"_",j,".csv")
-  print(paste0("Salvando: ",filename))
-  fwrite(reforco, file= filename)
+  # if("vacina_DA" %in% colnames(tabela_wide_split)) {
+  #   
+  #   reforco <- tabela_wide_split %>%
+  #                 filter(!is.na(data_D2) & is.na(data_R) & is.na(vacina_D) & is.na(vacina_DA)) %>%
+  #                 count(data_D2, vacina_D2, agegroup) 
+  # 
+  # } else {
+  #   
+  #  reforco <- tabela_wide_split %>%
+  #                 filter(!is.na(data_D2) & is.na(data_R) & is.na(vacina_D)) %>%
+  #                 count(data_D2, vacina_D2, agegroup)   
+  #   }
+  # 
+  # reforco <- reforco %>% mutate(dif = as.integer(as.Date(Sys.time()) - data_D2)) %>% select(-n)
+  # 
+  # filename = paste0(output_folder,"reforco/tempo_d2_reforco_",estado,"_",j,".csv")
+  # print(paste0("Salvando: ",filename))
+  # fwrite(reforco, file= filename)
    } #j
     
   } else {
@@ -434,9 +444,29 @@ prepara_historico <- function(estado = "SP",
                                     right = F,
                                     labels = F)))
   
-  tabela <- todas_vacinas %>% count(vacina, agegroup,data,doses, .drop = FALSE) %>% mutate(type = "ag_child")
-  tabela2 <- todas_vacinas %>% count(vacina, agegroup_10,data,doses, .drop = FALSE) %>% mutate(type = "ag_10")
-  colnames(tabela2)[2] <- "agegroup"
+  sum(is.na(todas_vacinas$data))
+  
+  tabela <- todas_vacinas %>% 
+    rename(date = data) %>%
+    count(vacina, agegroup,date,doses, .drop = FALSE) %>% 
+    mutate(type = "ag_child") %>%
+    drop_na(vacina, agegroup, date, doses) %>%
+    complete(date = seq.Date(min(date), max(date), by="day"),
+      vacina, agegroup, doses, type,
+             fill = list(n = 0)) %>%
+    rename(data = date)
+
+  tabela2 <- todas_vacinas %>%
+    rename(date = data) %>%
+    count(vacina, agegroup_10, date, doses, .drop = FALSE) %>% 
+    mutate(type = "ag_10") %>%
+    drop_na(vacina, agegroup_10, date, doses) %>%
+    complete(date = seq.Date(min(date), max(date), by="day"),
+             vacina, agegroup_10, doses, type,
+             fill = list(n = 0)) %>%
+  rename(data = date) %>%
+  rename(agegroup = agegroup_10)
+  
   tab <- bind_rows(tabela, tabela2) %>% 
     spread(key = type, value = n) %>% 
     arrange(data, agegroup, vacina, doses)
@@ -447,7 +477,9 @@ prepara_historico <- function(estado = "SP",
   fwrite(tab, file = filename)
   
 ### Wide  
-  tabela_id_idade <- todas_vacinas %>% select(id, agegroup) %>% distinct()
+  tabela_id_idade <- todas_vacinas %>% 
+                        select(id, agegroup) %>% 
+                        distinct()
     
   tabela_wide = todas_vacinas %>%
     select(-agegroup, -idade) %>%
@@ -468,24 +500,24 @@ prepara_historico <- function(estado = "SP",
   
   ### Histórico apenas dos que necessitam de dose de reforço
   
-  if("vacina_DA" %in% colnames(tabela_wide)) {
-    
-    reforco <- tabela_wide %>%
-      filter(!is.na(data_D2) & is.na(data_R) & is.na(vacina_D) & is.na(vacina_DA)) %>%
-      count(data_D2, vacina_D2, agegroup) 
-    
-  } else {
-    
-    reforco <- tabela_wide %>%
-      filter(!is.na(data_D2) & is.na(data_R) & is.na(vacina_D)) %>%
-      count(data_D2, vacina_D2, agegroup)   
-  }
-  
-  reforco <- reforco %>% mutate(dif = as.integer(as.Date(Sys.time()) - data_D2)) %>% select(-n)
-  
-  filename = paste0(output_folder,"reforco/tempo_d2_reforco_",estado,".csv")
-  print(paste0("Salvando: ",filename))
-  fwrite(reforco, file = filename)
+  # if("vacina_DA" %in% colnames(tabela_wide)) {
+  #   
+  #   reforco <- tabela_wide %>%
+  #     filter(!is.na(data_D2) & is.na(data_R) & is.na(vacina_D) & is.na(vacina_DA)) %>%
+  #     count(data_D2, vacina_D2, agegroup) 
+  #   
+  # } else {
+  #   
+  #   reforco <- tabela_wide %>%
+  #     filter(!is.na(data_D2) & is.na(data_R) & is.na(vacina_D)) %>%
+  #     count(data_D2, vacina_D2, agegroup)   
+  # }
+  # 
+  # reforco <- reforco %>% mutate(dif = as.integer(as.Date(Sys.time()) - data_D2)) %>% select(-n)
+  # 
+  # filename = paste0(output_folder,"reforco/tempo_d2_reforco_",estado,".csv")
+  # print(paste0("Salvando: ",filename))
+  # fwrite(reforco, file = filename)
   }
 }
 
