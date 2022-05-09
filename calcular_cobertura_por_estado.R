@@ -128,7 +128,12 @@ for(i in files) {
     
   df_d1 <- df2 %>% 
             drop_na(dose) %>% 
-            count(data, agegroup, dose)
+            count(data, agegroup, dose) %>%
+            rename(date = data) %>%
+            complete(date = seq.Date(min(date), max(date), by="day"),
+                     agegroup, dose,
+                     fill = list(n = 0)) %>%
+            rename(data = date)
   
   # Dates from D2
   d2_code_a <- c(12,123)
@@ -140,7 +145,14 @@ for(i in files) {
   df2$data[df2$next_order %in% d2_code_a] <- df2$data_D2[df2$next_order %in% d2_code_a]
   df2$data[which(df2$next_order %in% d2_code_b)] <- df2$data_D[which(df2$next_order %in% d2_code_b)]
   
-  df_d2 <- df2 %>% drop_na(data) %>% count(data, agegroup) %>% mutate(dose = "D2")
+  df_d2 <- df2 %>% 
+    drop_na(data) %>% 
+    count(data, agegroup) %>% mutate(dose = "D2") %>%
+    rename(date = data) %>%
+    complete(date = seq.Date(min(date), max(date), by="day"),
+             agegroup, dose,
+             fill = list(n = 0)) %>%
+    rename(data = date)
   
   # Dates from D2 (D1 not present in the data base)
   d2_code_c <- c(2,23)
@@ -152,7 +164,12 @@ for(i in files) {
   df_d3 <- df2 %>% 
             drop_na(data) %>% 
             count(data, agegroup) %>% 
-            mutate(dose = "D2f")
+            mutate(dose = "D2f") %>%
+            rename(date = data) %>%
+            complete(date = seq.Date(min(date), max(date), by="day"),
+                     agegroup, dose,
+                     fill = list(n = 0)) %>%
+            rename(data = date)
   
   # Clear cache
   rm(df,df2);gc()
