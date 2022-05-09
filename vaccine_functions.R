@@ -8,7 +8,7 @@ if(!require(scales)){install.packages("scales"); library(scales)}
 if(!require(optparse)){install.packages("scales"); library(optparse)}
 })
 
-doses_nomes <- function(x){
+  doses_nomes <- function(x){
   
   if(grepl("Reforço",x,ignore.case = T)){
     return("R")
@@ -122,7 +122,7 @@ prepare_table <- function(estado,
       }
       
       # Clean data
-      todas_vacinas <- todas_vacinas %>% filter(vacina_dataAplicacao < as.Date(data_base) & vacina_dataAplicacao > as.Date("2021-01-17"))
+      todas_vacinas <- todas_vacinas %>% filter(vacina_dataAplicacao < as.Date(data_base) & vacina_dataAplicacao >= as.Date("2021-01-17"))
       todas_vacinas <- todas_vacinas %>% drop_na()
       todas_vacinas <- todas_vacinas %>% filter(paciente_dataNascimento > "1900-01-01")
       
@@ -451,7 +451,7 @@ prepara_historico <- function(estado = "SP",
     count(vacina, agegroup,date,doses, .drop = FALSE) %>% 
     mutate(type = "ag_child") %>%
     drop_na(vacina, agegroup, date, doses) %>%
-    complete(date = seq.Date(min(date), max(date), by="day"),
+    complete(date = seq.Date(as.Date("2021-01-17"), as.Date(data_base), by="day"),
       vacina, agegroup, doses, type,
              fill = list(n = 0)) %>%
     rename(data = date)
@@ -461,7 +461,7 @@ prepara_historico <- function(estado = "SP",
     count(vacina, agegroup_10, date, doses, .drop = FALSE) %>% 
     mutate(type = "ag_10") %>%
     drop_na(vacina, agegroup_10, date, doses) %>%
-    complete(date = seq.Date(min(date), max(date), by="day"),
+    complete(date = seq.Date(as.Date("2021-01-17"), as.Date(data_base), by="day"),
              vacina, agegroup_10, doses, type,
              fill = list(n = 0)) %>%
   rename(data = date) %>%

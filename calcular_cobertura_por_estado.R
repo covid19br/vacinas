@@ -77,6 +77,12 @@ which_order2 <- function(x) {
 pal = wes_palette(n = 5, name = "Zissou1", type = "discrete")
 first.day <- as.Date("2021-01-01")
 
+data_base <- list.files("dados/") %>% 
+                grep("^dados_.*.csv", ., value = T) %>%
+                substr(7,16) %>%
+                as.Date() %>%
+                max(na.rm = T)
+
 #### Run script to compute dose coverage
 
 ini = Sys.time()
@@ -130,7 +136,7 @@ for(i in files) {
             drop_na(dose) %>% 
             count(data, agegroup, dose) %>%
             rename(date = data) %>%
-            complete(date = seq.Date(min(date), max(date), by="day"),
+            complete(date = seq.Date(as.Date("2021-01-17"), data_base, by="day"),
                      agegroup, dose,
                      fill = list(n = 0)) %>%
             rename(data = date)
@@ -149,7 +155,7 @@ for(i in files) {
     drop_na(data) %>% 
     count(data, agegroup) %>% mutate(dose = "D2") %>%
     rename(date = data) %>%
-    complete(date = seq.Date(min(date), max(date), by="day"),
+    complete(date = seq.Date(as.Date("2021-01-17"), data_base, by="day"),
              agegroup, dose,
              fill = list(n = 0)) %>%
     rename(data = date)
@@ -166,7 +172,7 @@ for(i in files) {
             count(data, agegroup) %>% 
             mutate(dose = "D2f") %>%
             rename(date = data) %>%
-            complete(date = seq.Date(min(date), max(date), by="day"),
+            complete(date = seq.Date(as.Date("2021-01-17"), data_base, by="day"),
                      agegroup, dose,
                      fill = list(n = 0)) %>%
             rename(data = date)
@@ -191,7 +197,7 @@ for(i in files) {
               summarise(total = sum(n, na.rm = T)) %>%
               ungroup() %>%
               spread(key = dose, value = total) %>%
-              complete(month = seq.Date(min(month), max(month), by="month"), agegroup,
+              complete(month = seq.Date(min(month), as.Date(beginning.of.month(data_base)), by="month"), agegroup,
                        fill = list(D1 = 0, D2 = 0, D = 0, D2f = 0)) %>%
               distinct() %>%
               mutate(D1 = D1 - D2,
@@ -212,7 +218,7 @@ for(i in files) {
     summarise(total = sum(n, na.rm = T)) %>%
     ungroup() %>%
     spread(key = dose, value = total) %>%
-    complete(week = seq.Date(min(week), max(week), by= "week"), agegroup,
+    complete(week = seq.Date(min(week), end.of.epiweek(data_base), by= "week"), agegroup,
              fill = list(D1 = 0, D2 = 0, D = 0, D2f = 0)) %>%
     distinct() %>%
     mutate(D1 = D1 - D2,
