@@ -60,8 +60,8 @@ which_order0 <- function(x) {
 }
 
 which_order <- function(x) {
-  y = c(x[1],x[2],x[3],x[4],x[5])
-  return(substr(paste0(order(y),collapse = ""), start = 1, stop = 5 - sum(is.na(y))))
+  y = c(x[1],x[2],x[3],x[4])
+  return(substr(paste0(order(y),collapse = ""), start = 1, stop = 4 - sum(is.na(y))))
 }
 
 which_order2 <- function(x) {
@@ -74,7 +74,10 @@ which_order2 <- function(x) {
 ###############
 
 #### Define objects
-pal = wes_palette(n = 5, name = "Zissou1", type = "discrete")
+pal = c(wes_palette(n = 5, name = "Zissou1", type = "discrete"),
+        wes_palette(n = 5, name = "Rushmore1", type = "discrete"))
+
+
 first.day <- as.Date("2021-01-01")
 
 data_base <- list.files("dados/") %>% 
@@ -101,32 +104,43 @@ for(i in files) {
   
   df <- data.frame(fread(paste0("output/wide/",i),
                          select = c("data_D1",
-                                    "data_D2","data_D","agegroup"),
+                                    "data_D2",
+                                    "data_R",
+                                    "data_D",
+                                    "agegroup"),
                          colClasses = c("data_D1" = "Date",
                                         "data_D2" = "Date",
-                                        "data_D" = "Date",
-                                        "data_DA" = "Date")))
+                                        "data_R" = "Date",
+                                        "data_D" = "Date")))
 
+  
   df[df==""] <- NA
   df$agegroup <- factor(df$agegroup, levels = c(1:11))
   
   # Compute time difference in days between each dose type to reference date
   df2 <- df %>% mutate(dif1 = as.numeric(data_D1 - first.day),
                        dif2 = as.numeric(data_D2 - first.day),
+                       difR = as.numeric(data_R - first.day),
                        difU = as.numeric(data_D - first.day)) %>%
+                filter(!(difR %leNAF% dif2)) %>%
                 filter(!(dif2 %leNAF% dif1))
 
   # Compute dose's date sequence
-  df2$next_order = apply(df2[,c("dif1","dif2","difU")], 1, which_order0)
+  df2$next_order = apply(df2[,c("dif1","dif2","difU","difR")], 1, which_order)
 
-  # Compute the frequency of the dose's date sequence
+   # Compute the frequency of the dose's date sequence
   da_order_uf <- df2 %>% count(next_order) %>% mutate(UF = state)
   da_order <- bind_rows(da_order, da_order_uf)
   
   # Dates from D1
   df2$dose <- NA
-  df2$dose[df2$next_order %in% c(1,12,123)] <- "D1"
-  df2$dose[df2$next_order %in% c(3,31,32,312,321) ] <- "D"
+  df2$dose[df2$next_order %in% c(1,12,13,14,
+                                 123,124,132,134,142,143,
+                                 1234,1243,1342,1324,1423,1432)] <- "D1"
+  
+  df2$dose[df2$next_order %in% c(3,31,32,34,
+                                 312,314,321,324,341,342,
+                                 3124,3142,3214,3241,3421) ] <- "D"
   
   df2$data <- NA
   df2$data <- df2$data_D1
@@ -142,8 +156,8 @@ for(i in files) {
             rename(data = date)
   
   # Dates from D2
-  d2_code_a <- c(12,123)
-  d2_code_b <- c(13, 132)
+  d2_code_a <- c(12,123,124,1234,1243) # D2 na segunda posição
+  d2_code_b <- c(13, 132, 134, 1342, 1324) # Segunda posição (ou dose) é D (Janssen), porém primeira não é Janssen
   
   df2$data <- NA
   class(df2$data) <- "Date"
@@ -151,7 +165,7 @@ for(i in files) {
   df2$data[df2$next_order %in% d2_code_a] <- df2$data_D2[df2$next_order %in% d2_code_a]
   df2$data[which(df2$next_order %in% d2_code_b)] <- df2$data_D[which(df2$next_order %in% d2_code_b)]
   
-  df_d2 <- df2 %>% 
+  df_d2a <- df2 %>% 
     drop_na(data) %>% 
     count(data, agegroup) %>% mutate(dose = "D2") %>%
     rename(date = data) %>%
@@ -161,13 +175,13 @@ for(i in files) {
     rename(data = date)
   
   # Dates from D2 (D1 not present in the data base)
-  d2_code_c <- c(2,23)
+  d2_code_c <- c(2,23,234,24,243)
   
   df2$data <- NA
   class(df2$data) <- "Date"
   df2$data[df2$next_order %in% d2_code_c] <- df2$data_D2[df2$next_order %in% d2_code_c]
   
-  df_d3 <- df2 %>% 
+  df_d2b <- df2 %>% 
             drop_na(data) %>% 
             count(data, agegroup) %>% 
             mutate(dose = "D2f") %>%
@@ -177,18 +191,63 @@ for(i in files) {
                      fill = list(n = 0)) %>%
             rename(data = date)
   
+  ####
+  # Dates from R
+  dr_code_a <- c(124,1243) # R na terceira posição e D1 presente
+  dr_code_b <- c(24, 243) # R na segunda posição e D1 ausente
+  
+  df2$data <- NA
+  class(df2$data) <- "Date"
+  
+  df2$data[df2$next_order %in% dr_code_a] <- df2$data_R[df2$next_order %in% dr_code_a]
+  df2$data[which(df2$next_order %in% dr_code_b)] <- df2$data_R[which(df2$next_order %in% dr_code_b)]
+  
+  df_Ra <- df2 %>% 
+    drop_na(data) %>% 
+    count(data, agegroup) %>% mutate(dose = "R") %>%
+    rename(date = data) %>%
+    complete(date = seq.Date(as.Date("2021-01-17"), data_base, by="day"),
+             agegroup, dose,
+             fill = list(n = 0)) %>%
+    rename(data = date)
+  
+  # Dates from R
+  dr_code_c <- c(123,1234) # D na terceira posição como reforço e D1 presente #143 (D1-R-D) e 1432 (D1-R-D-D2) ignorados
+  dr_code_d <- c(23,234)  # D na terceira posição como reforço e D1 ausente
+  
+  df2$data <- NA
+  class(df2$data) <- "Date"
+  
+  df2$data[df2$next_order %in% dr_code_c] <- df2$data_D[df2$next_order %in% dr_code_c]
+  df2$data[which(df2$next_order %in% dr_code_d)] <- df2$data_D[which(df2$next_order %in% dr_code_d)]
+  
+  df_Rb <- df2 %>% 
+    drop_na(data) %>% 
+    count(data, agegroup) %>% mutate(dose = "R") %>%
+    rename(date = data) %>%
+    complete(date = seq.Date(as.Date("2021-01-17"), data_base, by="day"),
+             agegroup, dose,
+             fill = list(n = 0)) %>%
+    rename(data = date)
+  
   # Clear cache
-  rm(df,df2);gc()
+  #rm(df,df2);gc()
   
   # Merge all tables
   df_doses <- full_join(df_d1, 
-                   df_d2, 
+                   df_d2a, 
                    by = c("data","agegroup","dose","n"), 
                    na_matches = "never") %>%
-         full_join(df_d3, 
+              full_join(df_d2b, 
                    by = c("data","agegroup","dose","n"), 
-                   na_matches = "never")    
-  
+                   na_matches = "never")  %>%
+              full_join(df_Ra, 
+                   by = c("data","agegroup","dose","n"), 
+                   na_matches = "never")  %>%
+              full_join(df_Rb, 
+                   by = c("data","agegroup","dose","n"), 
+                   na_matches = "never")
+            
   # Compute the population's dose coverage by month
   
   df_month <- df_doses %>%
@@ -198,18 +257,19 @@ for(i in files) {
               ungroup() %>%
               spread(key = dose, value = total) %>%
               complete(month = seq.Date(min(month), as.Date(beginning.of.month(as.character(data_base))), by="month"), agegroup,
-                       fill = list(D1 = 0, D2 = 0, D = 0, D2f = 0)) %>%
+                       fill = list(D1 = 0, D2 = 0, D = 0, D2f = 0, R = 0)) %>%
               distinct() %>%
               mutate(D1 = D1 - D2,
-                     D2 = D2 + D2f) %>%
+                     D2 = D2 + D2f - R) %>%
               group_by(agegroup) %>%
               mutate(D1cum = cumsum(D1),
                      D2cum = cumsum(D2),
+                     Rcum = cumsum(R),
                      Dcum = cumsum(D)) %>%
               gather(key = "dose", value = "n", -month, -agegroup)  %>%
-              mutate(dose = factor(dose, levels = c("Dcum","D2cum","D1cum","D","D2f","D2","D1"), ordered = T)) %>%
+              mutate(dose = factor(dose, levels = c("Dcum","Rcum","D2cum","D1cum","D","R","D2f","D2","D1"), ordered = T)) %>%
               mutate(UF = state)
-
+  da_month = df_month
   # Compute the population's dose coverage by epidemiological week
   
   df_week <- df_doses %>%
@@ -219,19 +279,20 @@ for(i in files) {
     ungroup() %>%
     spread(key = dose, value = total) %>%
     complete(week = seq.Date(min(week), end.of.epiweek(data_base), by= "week"), agegroup,
-             fill = list(D1 = 0, D2 = 0, D = 0, D2f = 0)) %>%
+             fill = list(D1 = 0, D2 = 0, D = 0, D2f = 0, R = 0)) %>%
     distinct() %>%
     mutate(D1 = D1 - D2,
-           D2 = D2 + D2f) %>%
+           D2 = D2 + D2f - R) %>%
     group_by(agegroup) %>%
     mutate(D1cum = cumsum(D1),
            D2cum = cumsum(D2),
+           Rcum = cumsum(R),
            Dcum = cumsum(D)) %>% #,
     # DA = cumsum(DA),
     # R = cumsum(R)) %>%
     select(-D2f) %>%
     gather(key = "dose", value = "n", -week, -agegroup) %>%
-    mutate(dose = factor(dose, levels = c("Dcum","D2cum","D1cum","D","D2f","D2","D1"), ordered = T)) %>%
+    mutate(dose = factor(dose, levels = c("Dcum","Rcum","D2cum","D1cum","D","R","D2f","D2","D1"), ordered = T)) %>%
     mutate(UF = state) %>%
     arrange(week, dose, agegroup)
   
@@ -267,13 +328,13 @@ fwrite(da_order, file = "output/doses_ordem_uf.csv")
 ###############
 
 data = da_month %>%
-  filter(dose %in% c("Dcum","D1cum","D2cum")) %>%
+  filter(dose %in% c("Dcum","Rcum","D1cum","D2cum")) %>%
   mutate(month = as.Date(month)) %>%
   group_by(month, agegroup, dose) %>%
   summarise(m = sum(n, na.rm = T)) %>%
   mutate(dose = factor(dose,
-                       levels = c("Dcum","D2cum","D1cum"),
-                       labels = c("D","D2","D1"), 
+                       levels = c("Dcum","Rcum","D2cum","D1cum"),
+                       labels = c("D","R","D2","D1"), 
                        ordered = TRUE),
          agegroup = factor(agegroup, levels = 2:11,
                           labels = c("5 a 11",
@@ -290,51 +351,53 @@ data = da_month %>%
 g1 <- ggplot(data, aes(x = month, y = m, fill = dose)) +
   geom_col() +
   facet_wrap(~agegroup, ncol = 4, scale = "free_y") +
-  scale_x_date(date_breaks = "2 months", date_labels = "%b-%y") +
+  scale_x_date(date_breaks = "3 months", date_labels = "%b-%y") +
   xlab("")  + ylab("") + theme_minimal() +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
   scale_fill_manual("Dose", 
                     labels = c("D",
+                               "R",
                                "D2",
                                "D1"),
-                    values = c(pal[5],pal[1],pal[4]))
+                    values = c(pal[5],pal[8],pal[1],pal[4]))
 
 ggsave(g1, file = "figuras/aplicacao_doses_prop_mes.png", width = 12, height = 8)
 
 ###
 data2 = da_month %>% 
-  filter(dose %in% c("Dcum","D1cum","D2cum")) %>%
+  filter(dose %in% c("Dcum","Rcum","D1cum","D2cum")) %>%
   mutate(month = as.Date(month)) %>%
   group_by(month, UF, dose) %>% 
   summarise(m = sum(n, na.rm = T)) %>%
   mutate(dose = factor(dose,
-                       levels = c("Dcum","D2cum","D1cum"),
-                       labels = c("D","D2","D1"), 
+                       levels = c("Dcum","Rcum","D2cum","D1cum"),
+                       labels = c("D","R","D2","D1"), 
                        ordered = TRUE))
 
 g2 <- ggplot(data2, aes(x = month, y = m, fill = dose)) +
   geom_col() +
   facet_wrap(~UF, scale = "free_y") +
-  scale_x_date(date_breaks = "2 months", date_labels = "%b-%y") +
+  scale_x_date(date_breaks = "3 months", date_labels = "%b-%y") +
   xlab("")  + ylab("") + theme_minimal() +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
   scale_fill_manual("Dose", 
                     labels = c("D",
+                               "R",
                                "D2",
                                "D1"),
-                    values = c(pal[5],pal[1],pal[4]))
+                    values = c(pal[5],pal[8],pal[1],pal[4]))
 
 ggsave(g2, file = "figuras/aplicacao_doses_uf_mes.png", width = 18, height = 12)
 
 ######## Weekly plot
 
 data3 = da_week %>%
-  filter(dose %in% c("Dcum","D1cum","D2cum")) %>%
+  filter(dose %in% c("Dcum","Rcum","D1cum","D2cum")) %>%
   mutate(week = as.Date(week)) %>%
   group_by(week, agegroup, dose) %>% summarise(m = sum(n, na.rm = T)) %>%
   mutate(dose = factor(dose,
-                       levels = c("Dcum","D2cum","D1cum"),
-                       labels = c("D","D2","D1"), 
+                       levels = c("Dcum","Rcum","D2cum","D1cum"),
+                       labels = c("D","R","D2","D1"), 
                        ordered = TRUE),
          agegroup = factor(agegroup, levels = 2:11,
                            labels = c("5 a 11",
@@ -351,39 +414,41 @@ data3 = da_week %>%
 g3 <- ggplot(data3, aes(x = week, y = m, fill = dose)) +
   geom_col() +
   facet_wrap(~agegroup, ncol = 4, scale = "free_y") +
-  scale_x_date(date_breaks = "2 months", date_labels = "%b-%y") +
+  scale_x_date(date_breaks = "3 months", date_labels = "%b-%y") +
   xlab("")  + ylab("") + theme_minimal() +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
   scale_fill_manual("Dose", 
                     labels = c("D",
+                               "R",
                                "D2",
                                "D1"),
-                    values = c(pal[5],pal[1],pal[4]))
+                    values = c(pal[5],pal[8],pal[1],pal[4]))
 
 ggsave(g3, file = "figuras/aplicacao_doses_prop_week.png", width = 12, height = 8)
 
 ###
 data4 = da_week %>%
-  filter(dose %in% c("Dcum","D1cum","D2cum")) %>%
+  filter(dose %in% c("Dcum","Rcum","D1cum","D2cum")) %>%
   mutate(week = as.Date(week)) %>%
   group_by(week, UF, dose) %>% 
   summarise(m = sum(n, na.rm = T)) %>%
   mutate(dose = factor(dose,
-                       levels = c("Dcum","D2cum","D1cum"),
-                       labels = c("D","D2","D1"), 
+                       levels = c("Dcum","Rcum","D2cum","D1cum"),
+                       labels = c("D","R","D2","D1"), 
                        ordered = TRUE))
 
 g4 <- ggplot(data4, aes(x = week, y = m, fill = dose)) +
   geom_col() +
   facet_wrap(~UF, scale = "free_y") +
-  scale_x_date(date_breaks = "2 months", date_labels = "%b-%y") +
+  scale_x_date(date_breaks = "3 months", date_labels = "%b-%y") +
   xlab("")  + ylab("") + theme_minimal() +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
   scale_fill_manual("Dose", 
                     labels = c("D",
+                               "R",
                                "D2",
                                "D1"),
-                    values = c(pal[5],pal[1],pal[4]))
+                    values = c(pal[5],pal[8],pal[1],pal[4]))
 
 ggsave(g4, file = "figuras/aplicacao_doses_uf_week.png", width = 18, height = 12)
 
