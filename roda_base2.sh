@@ -181,10 +181,10 @@ if [ $process ]; then
            [ "output/doses_aplicadas/doses_aplicadas_${estado}.csv" -nt "output/doses_aplicadas/doses_aplicadas_${estado}_${NSPLIT}.csv" ] ; then
             rm -v output/doses_aplicadas/doses_aplicadas_${estado}_*.csv
         fi
-        if [ -s "output/reforco/tempo_d2_reforco_${estado}.csv" ] &&
-           [ "output/reforco/tempo_d2_reforco_${estado}.csv" -nt "output/reforco/tempo_d2_reforco_${estado}_${NSPLIT}.csv" ] ; then
-            rm -v output/reforco/tempo_d2_reforco_${estado}_*.csv
-        fi
+       # if [ -s "output/reforco/tempo_d2_reforco_${estado}.csv" ] &&
+       #    [ "output/reforco/tempo_d2_reforco_${estado}.csv" -nt "output/reforco/tempo_d2_reforco_${estado}_${NSPLIT}.csv" ] ; then
+       #     rm -v output/reforco/tempo_d2_reforco_${estado}_*.csv
+       #fi
     done
 fi
 
