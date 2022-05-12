@@ -213,7 +213,7 @@ for(i in files) {
   
   # Dates from R
   dr_code_c <- c(123,1234) # D na terceira posição como reforço e D1 presente #143 (D1-R-D) e 1432 (D1-R-D-D2) ignorados
-  dr_code_d <- c(23,234)  # D na terceira posição como reforço e D1 ausente
+  dr_code_d <- c(23,234)  # D na segunda posição como reforço e D1 ausente
   
   df2$data <- NA
   class(df2$data) <- "Date"
@@ -300,6 +300,9 @@ for(i in files) {
   
   da_month <- bind_rows(da_month, df_month)  
   da_week <- bind_rows(da_week, df_week)  
+  
+  fwrite(da_month, file = "output/doses_cobertura_proporcao_mes.csv")
+  fwrite(da_week, file = "output/doses_cobertura_proporcao_semana.csv")
 }
 
 fin = Sys.time()
@@ -321,7 +324,7 @@ da_week <- da_week %>%
 
 fwrite(da_month, file = "output/doses_cobertura_proporcao_mes.csv")
 fwrite(da_week, file = "output/doses_cobertura_proporcao_semana.csv")
-fwrite(da_order, file = "output/doses_ordem_uf.csv")
+#fwrite(da_order, file = "output/doses_ordem_uf.csv")
 
 ################
 ### Plots
@@ -361,7 +364,7 @@ g1 <- ggplot(data, aes(x = month, y = m, fill = dose)) +
                                "D1"),
                     values = c(pal[5],pal[8],pal[1],pal[4]))
 
-ggsave(g1, file = "figuras/aplicacao_doses_prop_mes.png", width = 12, height = 8)
+ggsave(g1, file = "figuras/aplicacao_doses_mes.png", width = 12, height = 8)
 
 ###
 data2 = da_month %>% 
@@ -424,7 +427,7 @@ g3 <- ggplot(data3, aes(x = week, y = m, fill = dose)) +
                                "D1"),
                     values = c(pal[5],pal[8],pal[1],pal[4]))
 
-ggsave(g3, file = "figuras/aplicacao_doses_prop_week.png", width = 12, height = 8)
+ggsave(g3, file = "figuras/aplicacao_doses_semana.png", width = 12, height = 8)
 
 ###
 data4 = da_week %>%
@@ -450,5 +453,5 @@ g4 <- ggplot(data4, aes(x = week, y = m, fill = dose)) +
                                "D1"),
                     values = c(pal[5],pal[8],pal[1],pal[4]))
 
-ggsave(g4, file = "figuras/aplicacao_doses_uf_week.png", width = 18, height = 12)
+ggsave(g4, file = "figuras/aplicacao_doses_uf_semana.png", width = 18, height = 12)
 
