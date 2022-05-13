@@ -102,7 +102,7 @@ for(i in files) {
   
   # Load table for each state in wide format
   
-  df <- data.frame(fread(paste0("output/wide/",i),
+  df2 <- data.frame(fread(paste0("output/wide/",i),
                          select = c("data_D1",
                                     "data_D2",
                                     "data_R",
@@ -114,11 +114,11 @@ for(i in files) {
                                         "data_D" = "Date")))
 
   
-  df[df==""] <- NA
-  df$agegroup <- factor(df$agegroup, levels = c(1:11))
+  df2[df2==""] <- NA
+  df2$agegroup <- factor(df2$agegroup, levels = c(1:11))
   
   # Compute time difference in days between each dose type to reference date
-  df2 <- df %>% mutate(dif1 = as.numeric(data_D1 - first.day),
+  df2 <- df2 %>% mutate(dif1 = as.numeric(data_D1 - first.day),
                        dif2 = as.numeric(data_D2 - first.day),
                        difR = as.numeric(data_R - first.day),
                        difU = as.numeric(data_D - first.day)) %>%
@@ -231,7 +231,7 @@ for(i in files) {
     rename(data = date)
   
   # Clear cache
-  #rm(df,df2);gc()
+  rm(df2);gc()
   
   # Merge all tables
   df_doses <- full_join(df_d1, 
@@ -256,7 +256,7 @@ for(i in files) {
               summarise(total = sum(n, na.rm = T)) %>%
               ungroup() %>%
               spread(key = dose, value = total) %>%
-              complete(month = seq.Date(min(month), as.Date(beginning.of.month(as.character(data_base))), by="month"), agegroup,
+              complete(month = seq.Date(as.Date("2021-01-01"), as.Date(beginning.of.month(as.character(data_base))), by="month"), agegroup,
                        fill = list(D1 = 0, D2 = 0, D = 0, D2f = 0, R = 0)) %>%
               distinct() %>%
               mutate(D1 = D1 - D2,
@@ -269,7 +269,6 @@ for(i in files) {
               gather(key = "dose", value = "n", -month, -agegroup)  %>%
               mutate(dose = factor(dose, levels = c("Dcum","Rcum","D2cum","D1cum","D","R","D2f","D2","D1"), ordered = T)) %>%
               mutate(UF = state)
-  da_month = df_month
   # Compute the population's dose coverage by epidemiological week
   
   df_week <- df_doses %>%
@@ -278,7 +277,7 @@ for(i in files) {
     summarise(total = sum(n, na.rm = T)) %>%
     ungroup() %>%
     spread(key = dose, value = total) %>%
-    complete(week = seq.Date(min(week), end.of.epiweek(data_base), by= "week"), agegroup,
+    complete(week = seq.Date(end.of.epiweek(as.Date("2021-01-17")), end.of.epiweek(data_base), by= "week"), agegroup,
              fill = list(D1 = 0, D2 = 0, D = 0, D2f = 0, R = 0)) %>%
     distinct() %>%
     mutate(D1 = D1 - D2,
@@ -305,8 +304,245 @@ for(i in files) {
   fwrite(da_week, file = "output/doses_cobertura_proporcao_semana.csv")
 }
 
-fin = Sys.time()
-fin - ini
+### Calcular cobertura para SP (estado com split)
+
+files <- list.files("output/wide")[grepl("[1-9].csv", list.files("output/wide"))]
+
+df_month_split <- data.frame()
+df_week_split <- data.frame()
+
+for(i in files) {
+
+  state = substr(i,22,23)
+  print(substr(i,22,25))
+  
+  # Load table for each state in wide format
+  
+  df2 <- data.frame(fread(paste0("output/wide/",i),
+                          select = c("data_D1",
+                                     "data_D2",
+                                     "data_R",
+                                     "data_D",
+                                     "agegroup"),
+                          colClasses = c("data_D1" = "Date",
+                                         "data_D2" = "Date",
+                                         "data_R" = "Date",
+                                         "data_D" = "Date")))
+
+  df2[df2==""] <- NA
+  df2$agegroup <- factor(df2$agegroup, levels = c(1:11))
+
+  # Compute time difference in days between each dose type to reference date
+  df2 <- df2 %>% mutate(dif1 = as.numeric(data_D1 - first.day),
+                        dif2 = as.numeric(data_D2 - first.day),
+                        difR = as.numeric(data_R - first.day),
+                        difU = as.numeric(data_D - first.day)) %>%
+    filter(!(difR %leNAF% dif2)) %>%
+    filter(!(dif2 %leNAF% dif1))
+
+  # Compute dose's date sequence
+  
+  cuts <- seq(1,nrow(df2),length.out = 10)
+  cuts[1] <- 0
+  
+  next_order = c()
+  for(j in 1:(length(cuts)-1)) {
+    
+    limits = as.integer(cuts[j:(j+1)]+c(1,0))
+    df_temp <- df2[limits[1]:limits[2],]
+    next_temp <- apply(df_temp[,c("dif1","dif2","difU","difR")], 1, which_order)
+    next_order = c(next_order, next_temp)
+    rm(next_temp, df_temp)
+  }
+  
+  df2$next_order = next_order
+
+  # Dates from D1
+  df2$dose <- NA
+  df2$dose[df2$next_order %in% c(1,12,13,14,
+                                 123,124,132,134,142,143,
+                                 1234,1243,1342,1324,1423,1432)] <- "D1"
+  
+  df2$dose[df2$next_order %in% c(3,31,32,34,
+                                 312,314,321,324,341,342,
+                                 3124,3142,3214,3241,3421) ] <- "D"
+
+  df2$data <- NA
+  df2$data <- df2$data_D1
+  df2$data[which(df2$dose == "D")] <- df2$data_D[which(df2$dose == "D")]
+
+  df_d1 <- df2 %>% 
+    drop_na(dose) %>% 
+    count(data, agegroup, dose) %>%
+    rename(date = data) %>%
+    complete(date = seq.Date(as.Date("2021-01-17"), data_base, by="day"),
+             agegroup, dose,
+             fill = list(n = 0)) %>%
+    rename(data = date)
+
+  # Dates from D2
+  d2_code_a <- c(12,123,124,1234,1243) # D2 na segunda posição
+  d2_code_b <- c(13, 132, 134, 1342, 1324) # Segunda posição (ou dose) é D (Janssen), porém primeira não é Janssen
+  
+  df2$data <- NA
+  class(df2$data) <- "Date"
+  
+  df2$data[df2$next_order %in% d2_code_a] <- df2$data_D2[df2$next_order %in% d2_code_a]
+  df2$data[which(df2$next_order %in% d2_code_b)] <- df2$data_D[which(df2$next_order %in% d2_code_b)]
+  
+  df_d2a <- df2 %>% 
+    drop_na(data) %>% 
+    count(data, agegroup) %>% mutate(dose = "D2") %>%
+    rename(date = data) %>%
+    complete(date = seq.Date(as.Date("2021-01-17"), data_base, by="day"),
+             agegroup, dose,
+             fill = list(n = 0)) %>%
+    rename(data = date)
+
+  # Dates from D2 (D1 not present in the data base)
+  d2_code_c <- c(2,23,234,24,243)
+  
+  df2$data <- NA
+  class(df2$data) <- "Date"
+  df2$data[df2$next_order %in% d2_code_c] <- df2$data_D2[df2$next_order %in% d2_code_c]
+  
+  df_d2b <- df2 %>% 
+    drop_na(data) %>% 
+    count(data, agegroup) %>% 
+    mutate(dose = "D2f") %>%
+    rename(date = data) %>%
+    complete(date = seq.Date(as.Date("2021-01-17"), data_base, by="day"),
+             agegroup, dose,
+             fill = list(n = 0)) %>%
+    rename(data = date)
+
+  ####
+  # Dates from R
+  dr_code_a <- c(124,1243) # R na terceira posição e D1 presente
+  dr_code_b <- c(24, 243) # R na segunda posição e D1 ausente
+  
+  df2$data <- NA
+  class(df2$data) <- "Date"
+  
+  df2$data[df2$next_order %in% dr_code_a] <- df2$data_R[df2$next_order %in% dr_code_a]
+  df2$data[which(df2$next_order %in% dr_code_b)] <- df2$data_R[which(df2$next_order %in% dr_code_b)]
+  
+  df_Ra <- df2 %>% 
+    drop_na(data) %>% 
+    count(data, agegroup) %>% mutate(dose = "R") %>%
+    rename(date = data) %>%
+    complete(date = seq.Date(as.Date("2021-01-17"), data_base, by="day"),
+             agegroup, dose,
+             fill = list(n = 0)) %>%
+    rename(data = date)
+
+  # Dates from R
+  dr_code_c <- c(123,1234) # D na terceira posição como reforço e D1 presente #143 (D1-R-D) e 1432 (D1-R-D-D2) ignorados
+  dr_code_d <- c(23,234)  # D na terceira posição como reforço e D1 ausente
+  
+  df2$data <- NA
+  class(df2$data) <- "Date"
+  
+  df2$data[df2$next_order %in% dr_code_c] <- df2$data_D[df2$next_order %in% dr_code_c]
+  df2$data[which(df2$next_order %in% dr_code_d)] <- df2$data_D[which(df2$next_order %in% dr_code_d)]
+  
+  df_Rb <- df2 %>% 
+    drop_na(data) %>% 
+    count(data, agegroup) %>% mutate(dose = "R") %>%
+    rename(date = data) %>%
+    complete(date = seq.Date(as.Date("2021-01-17"), data_base, by="day"),
+             agegroup, dose,
+             fill = list(n = 0)) %>%
+    rename(data = date)
+  
+  # Clear cache
+  rm(df2);gc()
+  
+  # Merge all tables
+  df_doses <- full_join(df_d1, 
+                        df_d2a, 
+                        by = c("data","agegroup","dose","n"), 
+                        na_matches = "never") %>%
+    full_join(df_d2b, 
+              by = c("data","agegroup","dose","n"), 
+              na_matches = "never")  %>%
+    full_join(df_Ra, 
+              by = c("data","agegroup","dose","n"), 
+              na_matches = "never")  %>%
+    full_join(df_Rb, 
+              by = c("data","agegroup","dose","n"), 
+              na_matches = "never")
+  
+  # Compute the population's dose coverage by month
+
+  df_month <- df_doses %>%
+    mutate(month = as.Date(beginning.of.month(as.character(data)))) %>%
+    group_by(month, agegroup, dose) %>% 
+    summarise(total = sum(n, na.rm = T)) %>%
+    ungroup() %>%
+    spread(key = dose, value = total) %>%
+    complete(month = seq.Date(as.Date("2021-01-01"), as.Date(beginning.of.month(as.character(data_base))), by="month"), agegroup,
+             fill = list(D1 = 0, D2 = 0, D = 0, D2f = 0, R = 0)) %>%
+    distinct() %>%
+    mutate(D1 = D1 - D2,
+           D2 = D2 + D2f - R) %>%
+    group_by(agegroup) %>%
+    mutate(D1cum = cumsum(D1),
+           D2cum = cumsum(D2),
+           Rcum = cumsum(R),
+           Dcum = cumsum(D)) %>%
+    gather(key = "dose", value = "n", -month, -agegroup)  %>%
+    mutate(dose = factor(dose, levels = c("Dcum","Rcum","D2cum","D1cum","D","R","D2f","D2","D1"), ordered = T)) %>%
+    mutate(UF = state)
+  
+  # Compute the population's dose coverage by epidemiological week
+
+  df_week <- df_doses %>%
+    mutate(week = end.of.epiweek(data)) %>%
+    group_by(week, agegroup, dose) %>% 
+    summarise(total = sum(n, na.rm = T)) %>%
+    ungroup() %>%
+    spread(key = dose, value = total) %>%
+    complete(week = seq.Date(end.of.epiweek(as.Date("2021-01-17")), end.of.epiweek(data_base), by= "week"), agegroup,
+             fill = list(D1 = 0, D2 = 0, D = 0, D2f = 0, R = 0)) %>%
+    distinct() %>%
+    mutate(D1 = D1 - D2,
+           D2 = D2 + D2f - R) %>%
+    group_by(agegroup) %>%
+    mutate(D1cum = cumsum(D1),
+           D2cum = cumsum(D2),
+           Rcum = cumsum(R),
+           Dcum = cumsum(D)) %>%
+    select(-D2f) %>%
+    gather(key = "dose", value = "n", -week, -agegroup) %>%
+    mutate(dose = factor(dose, levels = c("Dcum","Rcum","D2cum","D1cum","D","R","D2f","D2","D1"), ordered = T)) %>%
+    mutate(UF = state) %>%
+    arrange(week, dose, agegroup)
+  
+  # Bind rows
+  df_month_split <- bind_rows(df_month_split, df_month)  
+  df_week_split <- bind_rows(df_week_split, df_week)  
+  
+}
+
+df_month <- df_month_split %>%
+  group_by(month, agegroup, dose,UF) %>%
+  summarise(n = sum(n, na.rm = T)) %>%
+  complete(month = seq.Date(as.Date("2021-01-01"), as.Date(beginning.of.month(as.character(data_base))), by="month"), 
+           agegroup, dose, UF,
+           fill = list(D1 = 0, D2 = 0, D = 0, D2f = 0, R = 0, D1cum = 0, D2cum = 0, Rcum = 0, Dcum = 0))
+
+df_week <- df_week_split %>%
+  group_by(week, agegroup, dose,UF) %>%
+  summarise(n = sum(n, na.rm = T)) %>%
+  complete(month = seq.Date(end.of.epiweek(as.Date("2021-01-17")), as.Date(beginning.of.month(as.character(data_base))), by="month"), 
+         agegroup, dose, UF,
+         fill = list(D1 = 0, D2 = 0, D = 0, D2f = 0, R = 0, D1cum = 0, D2cum = 0, Rcum = 0, Dcum = 0))
+
+##### Unir todas as bases (estados com e sem split)
+
+da_month <- bind_rows(da_month, df_month)
+da_week <- bind_rows(da_week, df_week)
 
 # Set month date to the first day of the next month and filter agegroup = 1
 
@@ -324,7 +560,11 @@ da_week <- da_week %>%
 
 fwrite(da_month, file = "output/doses_cobertura_proporcao_mes.csv")
 fwrite(da_week, file = "output/doses_cobertura_proporcao_semana.csv")
-#fwrite(da_order, file = "output/doses_ordem_uf.csv")
+
+######
+
+fin = Sys.time()
+fin - ini
 
 ################
 ### Plots
