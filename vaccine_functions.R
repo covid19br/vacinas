@@ -443,9 +443,7 @@ prepara_historico <- function(estado = "SP",
                                     include.lowest = T, 
                                     right = F,
                                     labels = F)))
-  
-  sum(is.na(todas_vacinas$data))
-  
+
   tabela <- todas_vacinas %>% 
     rename(date = data) %>%
     count(vacina, agegroup,date,doses, .drop = FALSE) %>% 
