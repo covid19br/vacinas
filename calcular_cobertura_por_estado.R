@@ -90,7 +90,8 @@ data_base <- list.files("dados/") %>%
 
 ini = Sys.time()
   
-files <- list.files("output/wide")[!grepl("[1-9].csv", list.files("output/wide"))]
+all_files <- list.files("output/wide")
+files <- all_files[!grepl("[1-9].csv", all_files) & !grepl("SP", all_files)]
 
 da_month <- data.frame()
 da_week <- data.frame()
@@ -541,8 +542,8 @@ df_week <- df_week_split %>%
 
 ##### Unir todas as bases (estados com e sem split)
 
-da_month <- bind_rows(da_month, df_month)
-da_week <- bind_rows(da_week, df_week)
+da_month <- bind_rows(da_month, df_month) %>% distinct()
+da_week <- bind_rows(da_week, df_week) %>% distinct()
 
 # Set month date to the first day of the next month and filter agegroup = 1
 
