@@ -128,7 +128,7 @@ if [ $process ]; then
     for estado in "${estados[@]}"; do
           Rscript vaccine_functions.R --command prepara_dado --estado $estado --dataBase $lastdate &&
           Rscript vaccine_functions.R --command prepara_cobertura --estado $estado --dataBase $lastdate &&
-          rm output/${estado}_PNI_clean.csv
+         # rm output/${estado}_PNI_clean.csv
         echo "state ${estado} done"
     done
     
@@ -161,7 +161,7 @@ if [ $process ]; then
     
         echo "cleaning data for state ${estado} in $PWD folder"
         Rscript vaccine_functions.R --command prepara_cobertura_split --split TRUE --estado $estado --dataBase $lastdate &&
-          rm dados/split_sorted_limpo_dados_${lastdate}_${estado}_*.csv
+         # rm dados/split_sorted_limpo_dados_${lastdate}_${estado}_*.csv
         echo "done"
     
 	done
@@ -192,6 +192,7 @@ fi
 
 if [ $remove ]; then
     echo "== Removendo arquivos baixados e limpos"
+	rm -v output/*_PNI_clean.csv
     rm -v dados/dados_${lastdate}_*.csv dados/limpo_dados_${lastdate}_*.csv
     rm -v dados/split_sorted_limpo_dados_${lastdate}_*_*.csv
 fi
@@ -218,6 +219,12 @@ if [ $gitupdate ]; then
     pushd $DADOS
     git add "figuras/aplicacao_doses_uf_semana.png" "figuras/aplicacao_doses_semana.png" "figuras/aplicacao_doses_uf_mes.png" "figuras/aplicacao_doses_mes.png"
 	git add "figuras/aplicacao_doses_uf_semana_ordem.png" "figuras/aplicacao_doses_semana_ordem.png" "figuras/aplicacao_doses_uf_mes_ordem.png" "figuras/aplicacao_doses_mes_ordem.png"
+    popd
+	
+	cp "output/sipni_muni_residencia.csv.gz" "output/sipni_muni_residencia_agrupado.csv.gz" "output/sipni_muni_aplicacao.csv.gz" "output/sipni_muni_aplicacao_agrupado.csv.gz" "output/sipni_muni_residencia_long.csv.gz" "output/sipni_muni_aplicacao_long.csv.gz" $DADOS/municipios
+	
+	pushd $DADOS
+	git add "municipios/sipni_muni_residencia.csv.gz" "municipios/sipni_muni_residencia_agrupado.csv.gz" "municipios/sipni_muni_aplicacao.csv.gz" "municipios/sipni_muni_aplicacao_agrupado.csv.gz" "municipios/sipni_muni_residencia_long.csv.gz" "municipios/sipni_muni_aplicacao_long.csv.gz"
     popd
 	
     pushd $DADOS

@@ -6,7 +6,10 @@ suppressPackageStartupMessages({
   if(!require(lubridate)){install.packages("lubridate"); library(lubridate)}
   if(!require(scales)){install.packages("scales"); library(scales)}
   if(!require(optparse)){install.packages("scales"); library(optparse)}
+  if(!require(stringr)){install.packages("stringr"); library(stringr)}
+  if(!require(crunch)){install.packages("crunch"); library(crunch)}
 })
+
 
 
 end.of.epiweek <- function(x, end = 6) {
@@ -31,7 +34,7 @@ contar_doses_municipio <- function(estado,
                           split = FALSE) {
   if(split){
     pattern <- paste0("split_sorted_limpo_dados_",data_base,"_",estado)
-    arquivos <- list.files(input_folder,pattern)
+    arquivos <- grep(pattern, list.files(input_folder), value = T)
     indice = 0
     
     for(arquivo in arquivos){
@@ -101,12 +104,6 @@ contar_doses_municipio <- function(estado,
         mutate(doses = 1:n()) %>%
         ungroup()
       
-      filename = paste0(output_folder,"municipios/muni_paciente_wide_",estado,"_",indice,".csv")
-      print(paste0("Salvando: ",filename))
-      fwrite(vac_wide, file = filename)
-      
-      rm(vac_wide);gc()
-      
       vac_muni_pac <- vacinas %>%
         filter(muni_pac != c("None")) %>%
         filter(muni_pac != c("999999")) %>%
@@ -134,6 +131,12 @@ contar_doses_municipio <- function(estado,
                     values_fn = first,
                     values_fill = 0)
       
+      filename = paste0(output_folder,"municipios/muni_paciente_wide_",estado,"_",indice,".csv")
+      print(paste0("Salvando: ",filename))
+      fwrite(vac_muni_pac, file = filename)
+      
+      rm(vac_muni_pac);gc()
+      
       vac_muni_apli <- vacinas %>%
         select(muni_apli, doses, agegroup, sexo, SE) %>%
         drop_na() %>%
@@ -159,9 +162,9 @@ contar_doses_municipio <- function(estado,
       
       filename = paste0(output_folder,"municipios/muni_aplicacao_wide_",estado,"_",indice,".csv")
       print(paste0("Salvando: ",filename))
-      fwrite(vac_wide, file = filename)
+      fwrite(vac_muni_apli, file = filename)
       
-      rm(vacinas);gc()
+      rm(vacinas, vac_muni_apli);gc()
       
     } # for
   } else {
@@ -231,12 +234,6 @@ contar_doses_municipio <- function(estado,
       mutate(doses = 1:n()) %>%
       ungroup()
     
-    filename = paste0(output_folder,"municipios/muni_paciente_wide_",estado,".csv")
-    print(paste0("Salvando: ",filename))
-    fwrite(vac_wide, file = filename)
-    
-    rm(vac_wide);gc()
-    
     vac_muni_pac <- vacinas %>%
       filter(muni_pac != c("None")) %>%
       filter(muni_pac != c("999999")) %>%
@@ -250,19 +247,25 @@ contar_doses_municipio <- function(estado,
                                labels = paste0("I",levels(agegroup))),
              doses = factor(doses, levels = c(1:3), labels = paste0("D",1:3)),
              SE = factor(SE, levels = seq(1,max(SE)))) %>%
-    count(muni_pac, doses, agegroup, sexo, SE) %>%
-    complete(muni_pac, doses, agegroup, sexo, SE, fill = list(n = 0)) %>%
-    arrange(muni_pac, doses, agegroup, sexo, SE) %>%
-    group_by(muni_pac, doses, agegroup, sexo) %>%
-    mutate(m = cumsum(n)) %>%
-    ungroup() %>%
-    select(-n) %>%
-    mutate(SE = as.numeric(SE)) %>%
-                  pivot_wider(id_cols = muni_pac,
-                  names_from = c(doses,agegroup,sexo,SE),
-                  values_from = m,
-                  values_fn = first,
-                  values_fill = 0)
+      count(muni_pac, doses, agegroup, sexo, SE) %>%
+      complete(muni_pac, doses, agegroup, sexo, SE, fill = list(n = 0)) %>%
+      arrange(muni_pac, doses, agegroup, sexo, SE) %>%
+      group_by(muni_pac, doses, agegroup, sexo) %>%
+      mutate(m = cumsum(n)) %>%
+      ungroup() %>%
+      select(-n) %>%
+      mutate(SE = as.numeric(SE)) %>%
+                    pivot_wider(id_cols = muni_pac,
+                    names_from = c(doses,agegroup,sexo,SE),
+                    values_from = m,
+                    values_fn = first,
+                    values_fill = 0)
+    
+    filename = paste0(output_folder,"municipios/muni_paciente_wide_",estado,".csv")
+    print(paste0("Salvando: ",filename))
+    fwrite(vac_muni_pac, file = filename)
+    
+    rm(vac_muni_pac);gc()
     
     vac_muni_apli <- vacinas %>%
       select(muni_apli, doses, agegroup, sexo, SE) %>%
@@ -289,9 +292,9 @@ contar_doses_municipio <- function(estado,
     
     filename = paste0(output_folder,"municipios/muni_aplicacao_wide_",estado,".csv")
     print(paste0("Salvando: ",filename))
-    fwrite(vac_wide, file = filename)
+    fwrite(vac_muni_apli, file = filename)
     
-    rm(vacinas);gc()
+    rm(vacinas, vac_muni_apli);gc()
   }
   
 }
@@ -306,24 +309,180 @@ data_base <- list.files("dados/") %>%
 
 # Processar municípios de estados sem split
 
-files <- list.files("^limpo_dados")[!grepl("[1-9].csv", list.files("limpo_dados"))]
+files_out <- list.files("dados/")
+estados <- substr(grep("^limpo_dados",files_out, value = T), 24,25)
 
-for(j in files) {
+for(j in estados) {
+  print(j)
   contar_doses_municipio(estado = j, data_base = data_base, split = FALSE)
  }
 
 # Processar municípios de estados com split
 
-files <- list.files("^split_sorted_limpo_dados_")
+print("starting SP")
+contar_doses_municipio(estado = "SP", data_base = data_base, split = TRUE)
 
-for(j in files) {
-  contar_doses_municipio(estado = j, data_base = data_base, split = TRUE)
+print("Processamento de dados: finalizado")
+#####
+
+print("Iniciando a união das tabelas")
+
+files <- list.files("output/municipios")
+files_pac <- grep("paciente", files, value = T)
+files_apl <- grep("aplica", files, value = T)
+
+df_pac <- data.frame()
+for(i in files_pac) {
+  print(i)
+  pac <- fread(paste0("output/municipios/",i)) %>% data.frame()
+  df_pac <- bind_rows(df_pac, pac)
 }
 
-print("Processamento de municípios: finalizado.")  
+# Corrigir código de cidades satélite em Brasília
+df_pac$muni_pac[grepl("^53",df_pac$muni_pac)] <- "530010"
 
-### Proximos passos:
-# Implementar juntar tudo em uma unica tabela, somar municipios de estados diferentes
+# Agrupar resultados para todos os municípios
+final_pac <- df_pac %>% mutate(muni_pac = factor(muni_pac)) %>% group_by(muni_pac) %>% summarise_all(sum)
 
+# Somar colunas com idades 90+ com as colunas 80-89, para tornar 80+
+final_pac2 <- final_pac
+final_pac2[,grep("I9",colnames(final_pac2))] = final_pac2[,grep("I9",colnames(final_pac2))] + final_pac2[,grep("I10",colnames(final_pac2))]
+final_pac2 <- final_pac2[,-grep("I10",colnames(final_pac2))]
 
+# Salvar
+filename <- "output/sipni_muni_residencia.csv.gz"
+print(paste0("Salvando: ", filename))
+write.csv.gz(final_pac2, file = filename)
 
+# Agrupar em adolescentes, adultos e idosos
+final_pac2 <- final_apl
+
+final_pac2[,grep("I3",colnames(final_pac2))] = final_pac2[,grep("I3",colnames(final_pac2))] + 
+  final_pac2[,grep("I4",colnames(final_pac2))] +
+  final_pac2[,grep("I5",colnames(final_pac2))] +
+  final_pac2[,grep("I6",colnames(final_pac2))] 
+
+final_pac2[,grep("I7",colnames(final_pac2))] = final_pac2[,grep("I7",colnames(final_pac2))] + 
+  final_pac2[,grep("I8",colnames(final_pac2))] +
+  final_pac2[,grep("I9",colnames(final_pac2))] +
+  final_pac2[,grep("I10",colnames(final_pac2))] 
+
+final_pac2 <- final_pac2[,grep("I1_|I2_|I3_|I7_",colnames(final_pac2))]
+
+colnames(final_pac2) <- gsub("I1_", "IA_", colnames(final_pac2))
+colnames(final_pac2) <- gsub("I2_", "IB_", colnames(final_pac2))
+colnames(final_pac2) <- gsub("I3_", "IC_", colnames(final_pac2))
+colnames(final_pac2) <- gsub("I7_", "ID_", colnames(final_pac2))
+
+# Salvar
+filename <- "output/sipni_muni_residencia_agrupado.csv.gz"
+print(paste0("Salvando: ", filename))
+write.csv.gz(final_pac2, file = filename)
+
+###
+df_apl <- data.frame()
+for(i in files_apl) {
+  print(i)
+  apl <- fread(paste0("output/municipios/",i)) %>% data.frame()
+  df_apl <- bind_rows(df_apl, apl)
+}
+
+# Corrigir código de cidades satélite em Brasília
+df_apl$muni_apli[grepl("^53",df_apl$muni_apli)] <- "530010"
+
+# Agrupar resultados para todos os municípios
+final_apl <- df_apl %>% mutate(muni_apli = factor(muni_apli)) %>% group_by(muni_apli) %>% summarise_all(sum)
+
+# Agrupar 80-89 e 90+ em 80+
+final_apl2 <- final_apl
+final_apl2[,grep("I9",colnames(final_apl2))] = final_apl2[,grep("I9",colnames(final_apl2))] + final_apl2[,grep("I10",colnames(final_apl2))]
+final_apl2 <- final_apl2[,-grep("I10",colnames(final_apl2))]
+
+filename <- "output/sipni_muni_aplicacao.csv.gz"
+print(paste0("Salvando: ", filename))
+write.csv.gz(final_apl2, file = filename)
+
+# Agrupar em adolescentes, adultos e idosos
+final_apl2 <- final_apl
+
+final_apl2[,grep("I3",colnames(final_apl2))] = final_apl2[,grep("I3",colnames(final_apl2))] + 
+                                                final_apl2[,grep("I4",colnames(final_apl2))] +
+                                                final_apl2[,grep("I5",colnames(final_apl2))] +
+                                                final_apl2[,grep("I6",colnames(final_apl2))] 
+  
+final_apl2[,grep("I7",colnames(final_apl2))] = final_apl2[,grep("I7",colnames(final_apl2))] + 
+                                                final_apl2[,grep("I8",colnames(final_apl2))] +
+                                                final_apl2[,grep("I9",colnames(final_apl2))] +
+                                                final_apl2[,grep("I10",colnames(final_apl2))] 
+
+final_apl2 <- final_apl2[,grep("I1_|I2_|I3_|I7_",colnames(final_apl2))]
+
+colnames(final_apl2) <- gsub("I1_", "IA_", colnames(final_apl2))
+colnames(final_apl2) <- gsub("I2_", "IB_", colnames(final_apl2))
+colnames(final_apl2) <- gsub("I3_", "IC_", colnames(final_apl2))
+colnames(final_apl2) <- gsub("I7_", "ID_", colnames(final_apl2))
+
+filename <- "output/sipni_muni_aplicacao_agrupado.csv.gz"
+print(paste0("Salvando: ", filename))
+write.csv.gz(final_apl2, file = filename)
+
+#### Formato long: municipio de residência
+
+pac_long <- final_pac %>%
+  gather(key = "key", value = "n", -muni_pac) %>%
+  mutate(SE = substr(key, 8, nchar(key)) %>% 
+               sub("_", "", x = .) %>%
+               sub("F", "", x = .) %>%
+               sub("M", "", x = .) %>%
+               as.numeric(),
+         dose = factor(substr(key, 2,2)),
+         agegroup = factor(gsub("_","",substr(key, 5,6)), 
+                                levels = 1:10, ordered = T),
+         sex = factor(ifelse(grepl("F", key), "F", "M"))) %>%
+         select(-key) %>%
+         arrange(muni_pac, sex, dose, agegroup, SE) %>%
+         rename(codigo_municipio = muni_pac)
+  
+# Reordenar colunas
+pac_long <- pac_long[,c("codigo_municipio","SE","dose","agegroup","sex","n")]
+
+filename <- "output/sipni_muni_residencia_long.csv.gz"
+print(paste0("Salvando: ", filename))
+write.csv.gz(pac_long, file = filename)
+
+#### Formato long: municipio de aplicacao
+
+apl_long <- final_apl %>%
+  gather(key = "key", value = "n", -muni_apli) %>%
+  mutate(SE = substr(key, 8, nchar(key)) %>% 
+           sub("_", "", x = .) %>%
+           sub("F", "", x = .) %>%
+           sub("M", "", x = .) %>%
+           as.numeric(),
+         dose = factor(substr(key, 2,2)),
+         agegroup = factor(gsub("_","",substr(key, 5,6)), 
+                           levels = 1:10, ordered = T),
+         sex = factor(ifelse(grepl("F", key), "F", "M"))) %>%
+  select(-key) %>%
+  arrange(muni_apli, sex, dose, agegroup, SE) %>%
+  rename(codigo_municipio = muni_apli)
+
+# Reordenar colunas
+apl_long <- apl_long[,c("codigo_municipio","SE","dose","agegroup","sex","n")]
+
+filename <- "output/sipni_muni_aplicacao_long.csv.gz"
+print(paste0("Salvando: ", filename))
+write.csv.gz(apl_long, file = filename)
+
+print("Finalizado.")
+###
+# 
+# ibge <- read_csv2("dados/municipios_codigos.csv")
+# 
+# ibge2 <- ibge %>% select(`Código Município Completo`, Nome_Município, Nome_UF) %>%
+#   rename(codigo = `Código Município Completo`,
+#          municipio = Nome_Município,
+#          UF = Nome_UF) %>%
+#   mutate(codigo = factor(substr(codigo,1,6)))
+# 
+# fw3 <- apl_long %>% left_join(ibge2, by = c("codigo_municipio" = "codigo"), na_matches = "never")
