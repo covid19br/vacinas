@@ -355,7 +355,7 @@ print(paste0("Salvando: ", filename))
 write.csv.gz(final_pac2, file = filename)
 
 # Agrupar em adolescentes, adultos e idosos
-final_pac2 <- final_apl
+final_pac2 <- final_pac
 
 final_pac2[,grep("I3",colnames(final_pac2))] = final_pac2[,grep("I3",colnames(final_pac2))] + 
   final_pac2[,grep("I4",colnames(final_pac2))] +
@@ -367,7 +367,7 @@ final_pac2[,grep("I7",colnames(final_pac2))] = final_pac2[,grep("I7",colnames(fi
   final_pac2[,grep("I9",colnames(final_pac2))] +
   final_pac2[,grep("I10",colnames(final_pac2))] 
 
-final_pac2 <- final_pac2[,grep("I1_|I2_|I3_|I7_",colnames(final_pac2))]
+final_pac2 <- final_pac2[,c(1,grep("I1_|I2_|I3_|I7_",colnames(final_pac2)))]
 
 colnames(final_pac2) <- gsub("I1_", "IA_", colnames(final_pac2))
 colnames(final_pac2) <- gsub("I2_", "IB_", colnames(final_pac2))
@@ -415,7 +415,7 @@ final_apl2[,grep("I7",colnames(final_apl2))] = final_apl2[,grep("I7",colnames(fi
                                                 final_apl2[,grep("I9",colnames(final_apl2))] +
                                                 final_apl2[,grep("I10",colnames(final_apl2))] 
 
-final_apl2 <- final_apl2[,grep("I1_|I2_|I3_|I7_",colnames(final_apl2))]
+final_apl2 <- final_apl2[,c(1,grep("I1_|I2_|I3_|I7_",colnames(final_apl2)))]
 
 colnames(final_apl2) <- gsub("I1_", "IA_", colnames(final_apl2))
 colnames(final_apl2) <- gsub("I2_", "IB_", colnames(final_apl2))
