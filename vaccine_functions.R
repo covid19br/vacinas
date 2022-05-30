@@ -593,14 +593,14 @@ join_historico <- function(estado = "SP",
   ### Create dataset with the following variables (wide format table):
   ### data_D2, vacina_D2, agegroup, n, dif  
   
-  reforco <- wide_doses %>%
-    filter(!is.na(data_D2) & is.na(data_R) & is.na(data_D) & is.na(data_3) & is.na(data_DA)) %>%
-    count(data_D2, vacina_D2, agegroup)  %>% 
-    mutate(dif = as.integer(as.Date(Sys.time()) - as.Date(data_D2)))
-  
-  filename = paste0(output_folder,"reforco/tempo_d2_reforco_",estado,".csv")
-  print(paste0("Saving: ",filename))
-  fwrite(reforco, file = filename)
+  # reforco <- wide_doses %>%
+  #   filter(!is.na(data_D2) & is.na(data_R) & is.na(data_D) & is.na(data_3) & is.na(data_DA)) %>%
+  #   count(data_D2, vacina_D2, agegroup)  %>% 
+  #   mutate(dif = as.integer(as.Date(Sys.time()) - as.Date(data_D2)))
+  # 
+  # filename = paste0(output_folder,"reforco/tempo_d2_reforco_",estado,".csv")
+  # print(paste0("Saving: ",filename))
+  # fwrite(reforco, file = filename)
   
   print(paste0(estado," done."))
 }
