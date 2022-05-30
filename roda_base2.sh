@@ -174,11 +174,11 @@ if [ $process ]; then
 
     # limpando arquivos quebrados
     for estado in "${estados_split[@]}"; do
-        if [ -s "output/wide/wide_doses_aplicadas_${estado}.csv" ] &&
-           [ "output/wide/wide_doses_aplicadas_${estado}.csv" -nt "output/wide/wide_doses_aplicadas_${estado}_${NSPLIT}.csv" ]; then
-            rm -v output/${estado}_*_PNI_clean.csv
-            rm -v output/wide/wide_doses_aplicadas_${estado}_*.csv
-        fi
+       # if [ -s "output/wide/wide_doses_aplicadas_${estado}.csv" ] &&
+       #    [ "output/wide/wide_doses_aplicadas_${estado}.csv" -nt "output/wide/wide_doses_aplicadas_${estado}_${NSPLIT}.csv" ]; then
+       #     rm -v output/${estado}_*_PNI_clean.csv
+       #     rm -v output/wide/wide_doses_aplicadas_${estado}_*.csv
+       # fi
         if [ -s "output/doses_aplicadas/doses_aplicadas_${estado}.csv" ] &&
            [ "output/doses_aplicadas/doses_aplicadas_${estado}.csv" -nt "output/doses_aplicadas/doses_aplicadas_${estado}_${NSPLIT}.csv" ] ; then
             rm -v output/doses_aplicadas/doses_aplicadas_${estado}_*.csv
