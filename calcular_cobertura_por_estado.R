@@ -89,7 +89,7 @@ data_base <- list.files("dados/") %>%
 #### Run script to compute dose coverage
 
 ini = Sys.time()
-  
+
 all_files <- list.files("output/wide")
 files <- all_files[!grepl("[1-9].csv", all_files) & !grepl("SP", all_files)]
 
@@ -113,7 +113,6 @@ for(i in files) {
                                         "data_D2" = "Date",
                                         "data_R" = "Date",
                                         "data_D" = "Date")))
-
   
   df2[df2==""] <- NA
   df2$agegroup <- factor(df2$agegroup, levels = c(1:11))
@@ -529,6 +528,7 @@ for(i in files) {
 df_month <- df_month_split %>%
   group_by(month, agegroup, dose,UF) %>%
   summarise(n = sum(n, na.rm = T)) %>%
+  ungroup() %>%
   complete(month = seq.Date(as.Date("2021-01-01"), as.Date(beginning.of.month(as.character(data_base))), by="month"), 
            agegroup, dose, UF,
            fill = list(D1 = 0, D2 = 0, D = 0, D2f = 0, R = 0, D1cum = 0, D2cum = 0, Rcum = 0, Dcum = 0))
@@ -536,7 +536,8 @@ df_month <- df_month_split %>%
 df_week <- df_week_split %>%
   group_by(week, agegroup, dose,UF) %>%
   summarise(n = sum(n, na.rm = T)) %>%
-  complete(month = seq.Date(end.of.epiweek(as.Date("2021-01-17")), as.Date(beginning.of.month(as.character(data_base))), by="month"), 
+  ungroup() %>%
+  complete(week = seq.Date(end.of.epiweek(as.Date("2021-01-17")), end.of.epiweek(data_base), by="week"), 
          agegroup, dose, UF,
          fill = list(D1 = 0, D2 = 0, D = 0, D2f = 0, R = 0, D1cum = 0, D2cum = 0, Rcum = 0, Dcum = 0))
 
