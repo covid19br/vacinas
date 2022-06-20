@@ -10,8 +10,6 @@ suppressPackageStartupMessages({
   if(!require(crunch)){install.packages("crunch"); library(crunch)}
 })
 
-
-
 end.of.epiweek <- function(x, end = 6) {
   offset <- (end - 4) %% 7
   num.x <- as.numeric(x)
@@ -74,7 +72,7 @@ contar_doses_municipio <- function(estado,
         mutate(paciente_enumSexoBiologico = droplevels(paciente_enumSexoBiologico))
       
       # Filtrar municipios de residencia com poucos registros
-      muni_excluir <- vacinas %>% count(paciente_endereco_coIbgeMunicipio) %>% filter(n <= 30) %>% select(-n)
+      muni_excluir <- vacinas %>% count(paciente_endereco_coIbgeMunicipio) %>% filter(n <= 10) %>% select(-n)
       
       colnames(vacinas) <- c("id", "nasc", "date","sexo","muni_pac","muni_apli")
       
@@ -204,7 +202,7 @@ contar_doses_municipio <- function(estado,
       mutate(paciente_enumSexoBiologico = droplevels(paciente_enumSexoBiologico))
   
     # Filtrar municipios de residencia com poucos registros
-    muni_excluir <- vacinas %>% count(paciente_endereco_coIbgeMunicipio) %>% filter(n <= 30) %>% select(-n)
+    muni_excluir <- vacinas %>% count(paciente_endereco_coIbgeMunicipio) %>% filter(n <= 10) %>% select(-n)
     
     colnames(vacinas) <- c("id", "nasc", "date","sexo","muni_pac","muni_apli")
   
@@ -306,6 +304,17 @@ data_base <- list.files("dados/") %>%
   substr(7,16) %>%
   as.Date() %>%
   max(na.rm = T)
+
+if(is.infinite(data_base)) {
+  print("Data em '^dados_.*.csv' não encontrada. Tentando ^limpo_dados_.*.csv")
+  data_base <- list.files("dados/") %>% 
+    grep("^limpo_dados_.*.csv", ., value = T) %>%
+    substr(13,22) %>%
+    as.Date() %>%
+    max(na.rm = T)
+}
+
+print(paste0("Data_base: ",data_base))
 
 # Processar municípios de estados sem split
 
