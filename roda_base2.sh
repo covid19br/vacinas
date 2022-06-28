@@ -84,6 +84,7 @@ if [ $download ]; then
 
     echo "== Tentando baixar base SI-PNI =="
 
+	## Fazer download de dados do opendatasus
     if [[ $overwrite || -z $olddate ]]; then
         python3 sipni_downloader2.py todas
     else
@@ -101,12 +102,13 @@ if [ $download ]; then
 fi
 
 if [ $clean ]; then
-    # pega data mais recente
+    # Pega data mais recente
     lastdate=`ls dados/dados_*.csv | grep -oP "20\d{2}-\d{2}-\d{2}" | sort -r | head -n1`
     
     echo "== Limpando base SI-PNI de ${lastdate} =="
     
-    #######limpa base
+    #######limpa base (seleciona apenas as colunas de interesse)
+	
     pushd dados/
     echo "cleaning columns in $PWD folder"
     for i in dados_${lastdate}*.csv; do
@@ -121,7 +123,7 @@ if [ $process ]; then
 
     echo "== Processando base SI-PNI de ${lastdate} =="
 
-    #######estados que não splitam
+    ####### Estados cujos bancos são analisados sem separação em diferentes arquivos
     estados=("AC" "AL" "AM" "AP" "BA" "CE" "DF" "ES" "GO" "MA" "MG" "MS" "MT" "PA" "PB" "PE" "PI" "PR" "RJ" "RN" "RO" "RR" "RS" "SC" "SE" "TO")
 
     echo "preparing data for states that doesn't split"
@@ -132,33 +134,30 @@ if [ $process ]; then
         echo "state ${estado} done"
     done
     
+	####### Estado cujos banco é analisado após separação em diferentes arquivos
+	
     for estado in "${estados_split[@]}"; do
         pushd dados/
+		
+		## Os registros são reordenados por id_individuo, de modo que os mesmos ids fiquem nos mesmos arquivos
         echo "sorting state ${estado} in $PWD folder"
         ./sort_files.sh limpo_dados_${lastdate}_${estado}.csv
         echo "done"
     
+		## Separação do banco de dados em diferentes arquivos
         echo "spliting state ${estado} in $PWD folder"
         ./split_file.sh sorted_limpo_dados_${lastdate}_${estado}.csv $NSPLIT &&
           rm -v sorted_limpo_dados_${lastdate}_${estado}.csv
         echo "done"
         popd
     
-        #pushd output/
-        #echo "aggregating data in single file for state ${estado} in $PWD folder"
-        #head -n 1 "$estado"_1_PNI_clean.csv > "$estado"_PNI_clean.csv
-        #for i in 1 2 3 4; do
-        #    tail -n +2 "$estado"_"${i}"_PNI_clean.csv >> "$estado"_PNI_clean.csv
-        #    rm "$estado"_"$i"_PNI_clean.csv
-        #done
-        #echo "done"
-        #popd
-    
+		## Processamento dos dados (prepare_table())
         echo "generating number of doses for state ${estado} in $PWD folder"
         Rscript vaccine_functions.R --command prepara_dado --split TRUE --estado $estado --dataBase $lastdate &&
             rm output/${estado}_PNI_clean.csv
         echo "done"
     
+		## Processamento dos dados (prepara_historico() e join_historico())
         echo "cleaning data for state ${estado} in $PWD folder"
         Rscript vaccine_functions.R --command prepara_cobertura_split --split TRUE --estado $estado --dataBase $lastdate &&
          # rm dados/split_sorted_limpo_dados_${lastdate}_${estado}_*.csv
@@ -174,19 +173,10 @@ if [ $process ]; then
 
     # limpando arquivos quebrados
     for estado in "${estados_split[@]}"; do
-       # if [ -s "output/wide/wide_doses_aplicadas_${estado}.csv" ] &&
-       #    [ "output/wide/wide_doses_aplicadas_${estado}.csv" -nt "output/wide/wide_doses_aplicadas_${estado}_${NSPLIT}.csv" ]; then
-       #     rm -v output/${estado}_*_PNI_clean.csv
-       #     rm -v output/wide/wide_doses_aplicadas_${estado}_*.csv
-       # fi
         if [ -s "output/doses_aplicadas/doses_aplicadas_${estado}.csv" ] &&
            [ "output/doses_aplicadas/doses_aplicadas_${estado}.csv" -nt "output/doses_aplicadas/doses_aplicadas_${estado}_${NSPLIT}.csv" ] ; then
             rm -v output/doses_aplicadas/doses_aplicadas_${estado}_*.csv
         fi
-       # if [ -s "output/reforco/tempo_d2_reforco_${estado}.csv" ] &&
-       #    [ "output/reforco/tempo_d2_reforco_${estado}.csv" -nt "output/reforco/tempo_d2_reforco_${estado}_${NSPLIT}.csv" ] ; then
-       #     rm -v output/reforco/tempo_d2_reforco_${estado}_*.csv
-       #fi
     done
 fi
 
