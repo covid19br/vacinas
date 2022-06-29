@@ -7,13 +7,23 @@ if(!require(tidyverse)){install.packages("tidyverse"); library(tidyverse)}
 if(!require(wesanderson)){install.packages("wesanderson"); library(wesanderson)}
 
 ##############################
-### Auxiliary functions
+### Funções auxiliares
 ##############################
 
+#' beggining.of.month:
+#' Função que faz a leitura de um string em formato de data ("%Y-%m-%d"), e altera o dia para o primeiro dia do mês
+#' @x: character. Data a ser transformada para o primeiro dia do mês da data correspondente.
+#' Exemplo: "2022-12-27" é convertido para "2022-12-01"
+#' 
 beginning.of.month <- function(x) {
   substr(x,9,10) <- "01"
   return(x)
 }
+
+#' end.of.epiweek:
+#' Função que converte uma data no último dia da semana epidemiológica ao qual esta data pertence
+#' @x: Date. Data a ser convertida
+#' @end: Número de dias a serem contados a partir do primeiro da semana epidemiológica
 
 end.of.epiweek <- function(x, end = 6) {
   offset <- (end - 4) %% 7
@@ -102,47 +112,62 @@ find_duplicated_record <- function(x, threshold = 10) {
 ### Script
 ###############
 
-#### Define objects
+# Data de referência: primeiro dia do ano
 first.day <- as.Date("2021-01-01")
+
+# Faz a leitura dos arquivos presentes em "dados/" e escolhe a data da base mais recente
 data_base <- list.files("dados/") %>% 
   grep("^dados_.*.csv", ., value = T) %>%
   substr(7,16) %>%
   as.Date() %>%
   max(na.rm = T)
 
-#### Run script to compute dose coverage
-
+# Horário e data de início do processamento dos dados
 ini = Sys.time()
 
+############
+#### Calcular a cobertura de doses por estado por ordem de aplicação
+############
+
+# Escolhe todos os arquivos sem separação (sem numeração no título)
 files <- list.files("output/wide")[!grepl("[1-9].csv", list.files("output/wide"))]
 
-#da_order <- data.frame()
-#da_dupli <- data.frame()
-
+# Tabela de cobertura de doses por mês
 da_month <- data.frame()
+
+# Tabela de cobertura de doses por semana
 da_week <- data.frame()
 
+# Iniciar loop para todos os arquivos selecionados
 for(i in files) {
+  
+  # Salva a sigla do estado, de acordo com o nome do arquivo
   state = substr(i,22,23)
   print(state)
   
-  # Load table for each state in wide format
-  
+  # Ler tabela em formato wide e filtra faixa etária < 5 anos (agegroup = 1)
   df <- data.frame(fread(paste0("output/wide/",i)))  %>%
     filter(agegroup != 1)
+  
+  # Caso não existam alguma das colunas abaixo, criar a coluna
+  # e preenche com NA
   
   if(!any(grepl("3",colnames(df)))) df$data_3 <- NA
   if(!any(grepl("4",colnames(df)))) df$data_4 <- NA
   if(!any(grepl("5",colnames(df)))) df$data_5 <- NA
   if(!any(grepl("DA",colnames(df)))) df$data_DA <- NA
-  
+
+  # Converte todas as colunas com `data_` em formato Date  
   df <- df %>%
           mutate_at(vars(contains('data_')), ~as.Date(.))
   
+  # Converte valores vazios em NA
   df[df==""] <- NA
+  
+  # Converte coluna de idade em fator
   df$agegroup <- factor(df$agegroup, levels = c(1:11))
   
-  # Compute time difference in days between each dose type to reference date
+  # Calcular a diferença de tempo em dias entre cada tipo de dose e a data de referência
   df <- df %>% mutate(dif1 = as.numeric(data_D1 - first.day),
                       dif2 = as.numeric(data_D2 - first.day),
                        
@@ -154,10 +179,10 @@ for(i in files) {
                       
                       difU = as.numeric(data_D - first.day))
   
+  # Seleciona apenas as colunas com a diferença das datas em relação à data de referência (números inteiros)  
   df2 <- df[,c("dif1","dif2","difA","difR","dif3","dif4","dif5","difU")]
   
   # Identificação dos registros em que a primeira dose é Janssen
-  
   min_dif <- apply(df2, 1, which_min)
   
   J <- factor((min_dif == 1 & df$vacina_D1 == "Janssen" |
@@ -166,23 +191,10 @@ for(i in files) {
                levels = c(T,F),
                labels = c("J","NJ")) # Janssen, Not Janssen
   
-  # # Compute dose's date sequence
-  # df$next_order = apply(df2, 1, which_order2)
-  # 
-  # # Find vaccination records with less than 15 days of difference
-  # df$dupli = apply(df2, 1, find_duplicated_record)
-  # 
-  # da_dupli <- bind_rows(da_dupli, data.frame(dupli = sum(df$dupli), UF = state))
-  # 
-  # df <- df %>% filter(dupli) %>% select(-dupli)
-  # 
-  # # Compute the frequency of the dose's date sequence
-  # da_order_uf <- df %>% count(agegroup, next_order) %>% mutate(UF = state)
-  # da_order <- bind_rows(da_order, da_order_uf)
-  
-  ###
-  #df2 = t(df[,c("data_D1","data_D2","data_DA","data_R","data_3","data_4","data_D")]) %>% data.frame()
+  # Reordena a data de aplicação das doses
   df3 = apply(df2,1,sort_rows) %>% t() %>% data.frame()
+  
+  # Calcula a frequência de 1ª Dose por data, faixa etária e tipo de primeira vacina (Janssen/Não-Janssen)
   
   D1 = data.frame(date = df3$X1 + as.Date("2021-01-01"), 
                   agegroup = df$agegroup, 
@@ -193,7 +205,7 @@ for(i in files) {
                    fill = list(n = 0)) %>%
     mutate(dose = "a")
   
-  
+  # Calcula a frequência de 2ª Dose por data, faixa etária e tipo de primeira vacina (Janssen/Não-Janssen)
   D2 = data.frame(date = df3$X2 + as.Date("2021-01-01"), 
                   agegroup = df$agegroup, 
                   janssen = J) %>% 
@@ -203,6 +215,7 @@ for(i in files) {
              fill = list(n = 0)) %>%
     mutate(dose = "b")
   
+  # Calcula a frequência de 3ª Dose por data, faixa etária e tipo de primeira vacina (Janssen/Não-Janssen)
   D3 = data.frame(date = df3$X3 + as.Date("2021-01-01"), 
                   agegroup = df$agegroup, 
                   janssen = J) %>% 
@@ -212,6 +225,7 @@ for(i in files) {
              fill = list(n = 0)) %>%
     mutate(dose = "c")
   
+  # Calcula a frequência de 4ª Dose por data, faixa etária e tipo de primeira vacina (Janssen/Não-Janssen)
   D4 = data.frame(date = df3$X4 + as.Date("2021-01-01"), 
                   agegroup = df$agegroup, 
                   janssen = J) %>% 
@@ -221,6 +235,7 @@ for(i in files) {
              fill = list(n = 0)) %>%
     mutate(dose = "d")
   
+  # Calcula a frequência de 5ª Dose por data, faixa etária e tipo de primeira vacina (Janssen/Não-Janssen)
   D5 = data.frame(date = df3$X5 + as.Date("2021-01-01"), 
                   agegroup = df$agegroup, 
                   janssen = J) %>% 
@@ -229,11 +244,15 @@ for(i in files) {
     complete(date = seq.Date(as.Date("2021-01-17"), data_base, by="day"), agegroup, janssen,
              fill = list(n = 0)) %>%
     mutate(dose = "e")
-  
+
+  # Une todas as tabelas  
   df_doses <- bind_rows(D1,D2,D3,D4,D5) %>%
     mutate(dose = factor(dose))
   
+  # Limpa cache
   rm(df3, D1, D2, D3, D4, D5);gc()
+  
+  # Calcula a cobertura de doses por mês
   
   df_month <- df_doses %>%
     mutate(month = as.Date(beginning.of.month(as.character(date)))) %>%
@@ -283,7 +302,7 @@ for(i in files) {
                          labels = c("D1", "D1cum", "D2", "D2cum", "D3", "D3cum", "D4", "D4cum", "D5", "D5cum")),
            UF = state)
 
-  ########
+  # Calcula a cobertura de doses por semana epidemiológica
 
   df_week <- df_doses %>%
     mutate(week = end.of.epiweek(date)) %>%
@@ -334,29 +353,33 @@ for(i in files) {
            UF = state)
   
    rm(df_doses); gc()
+   
+  # Une tabelas de dados de todos os estados pelo estado processado no loop atual (agrupamento por mês)
+  da_month <- bind_rows(da_month, df_month)
   
-  da_month <- bind_rows(da_month, df_month)  
+  # Une tabelas de dados de todos os estados pelo estado processado no loop atual (agrupamento por semana epidemiológica)
   da_week <- bind_rows(da_week, df_week)  
 }
 
+# Define a data do mês para o primeiro dia do próximo mês. remove valores NA
 da_month <- da_month %>%
   mutate(month = as.Date(beginning.of.month(as.character(month + 32)))) %>%
-  drop_na(month, agegroup) %>%
-  filter(agegroup != 1)
+  drop_na(month, agegroup)
 
+# Remove valores NA para tabela de dados agrupados por semana epidemiológica
 da_week <- da_week %>%
-  drop_na(week, agegroup) %>%
-  filter(agegroup != 1)
+  drop_na(week, agegroup)
+
+# Salva arquivos de saída
 
 fwrite(da_month, file = "output/doses_cobertura_proporcao_mes_ordem.csv")
 fwrite(da_week, file = "output/doses_cobertura_proporcao_semana_ordem.csv")
 
-fin = Sys.time()
-fin - ini
-
 ################
 ### Plots
 ###############
+
+# Plot de dados agrupados por mês e faixa etária
 
 gage_month <- da_month %>% 
   filter(!dose %in% c("D1","D2","D3","D4","D5")) %>%
@@ -386,6 +409,10 @@ gage_month <- da_month %>%
                                "3ª dose",
                                "2ª dose",
                                "1ª dose"))
+
+ggsave(gage_month, file = "figuras/aplicacao_doses_mes_ordem.png", width = 24, height = 12)
+
+# Plot de dados agrupados por semana epidemiológica e faixa etária
 
   gage_week <- da_week %>% 
   filter(!dose %in% c("D1","D2","D3","D4","D5")) %>%
@@ -417,10 +444,10 @@ gage_month <- da_month %>%
                                   "2ª dose",
                                   "1ª dose"))
   
-ggsave(gage_month, file = "figuras/aplicacao_doses_mes_ordem.png", width = 24, height = 12)
 ggsave(gage_week, file = "figuras/aplicacao_doses_semana_ordem.png", width = 24, height = 12)
 
-#
+# Plot de dados agrupados por mês e UF
+
 guf_month <- da_month %>%
   filter(!dose %in% c("D1","D2","D3","D4","D5")) %>%
   mutate(dose = factor(dose,
@@ -450,6 +477,10 @@ guf_month <- da_month %>%
                                   "3ª dose",
                                   "2ª dose",
                                   "1ª dose"))
+
+ggsave(guf_month, file = "figuras/aplicacao_doses_uf_mes_ordem.png", width = 24, height = 12)
+
+# Plot de dados agrupados por semana epidemiológica e UF
 
 guf_week <- da_week %>%
   filter(!dose %in% c("D1","D2","D3","D4","D5")) %>%
@@ -481,8 +512,8 @@ guf_week <- da_week %>%
                                   "2ª dose",
                                   "1ª dose"))
 
-ggsave(guf_month, file = "figuras/aplicacao_doses_uf_mes_ordem.png", width = 24, height = 12)
 ggsave(guf_week, file = "figuras/aplicacao_doses_uf_semana_ordem.png", width = 24, height = 12)
 
-
-
+# Retorna o tempo total de execução do script
+fin = Sys.time()
+fin - ini
