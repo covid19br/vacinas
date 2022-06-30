@@ -138,6 +138,9 @@ da_month <- data.frame()
 # Tabela de cobertura de doses por semana
 da_week <- data.frame()
 
+# Tabela de registro de variáveis com valor = NA
+log_table = data.frae()
+
 # Iniciar loop para todos os arquivos selecionados
 for(i in files) {
   
@@ -193,6 +196,11 @@ for(i in files) {
   
   # Reordena a data de aplicação das doses
   df3 = apply(df2,1,sort_rows) %>% t() %>% data.frame()
+  
+  # Calcular linhas com NA para dose, agegroup e Janssen
+  drop_na_dose <- sum(is.na(df$dose))
+  drop_na_agegroup <- sum(is.na(df$agegroup))
+  drop_na_janssen <- sum(is.na(df$janssen))
   
   # Calcula a frequência de 1ª Dose por data, faixa etária e tipo de primeira vacina (Janssen/Não-Janssen)
   
@@ -359,6 +367,14 @@ for(i in files) {
   
   # Une tabelas de dados de todos os estados pelo estado processado no loop atual (agrupamento por semana epidemiológica)
   da_week <- bind_rows(da_week, df_week)  
+  
+  
+  log_table_temp <- data.frame(drop_na_dose = drop_na_dose,
+                           drop_na_agegroup = drop_na_agegroup,
+                           drop_na_janssen = drop_na_janssen,
+                           state = state)
+  
+  log_table = bind_rows(log_table, log_table_temp)
 }
 
 # Define a data do mês para o primeiro dia do próximo mês. remove valores NA
@@ -374,6 +390,12 @@ da_week <- da_week %>%
 
 fwrite(da_month, file = "output/doses_cobertura_proporcao_mes_ordem.csv")
 fwrite(da_week, file = "output/doses_cobertura_proporcao_semana_ordem.csv")
+
+# Salva log
+
+data_base_title = format(as.Date(Sys.time()), format = "%Y_%m_%d")
+filename = paste0("output/log/log_ordem_",data_base_title,".csv")
+write.csv(log_table, file = filename)
 
 ################
 ### Plots
