@@ -139,7 +139,7 @@ da_month <- data.frame()
 da_week <- data.frame()
 
 # Tabela de registro de variáveis com valor = NA
-log_table = data.frae()
+log_table = data.frame()
 
 # Iniciar loop para todos os arquivos selecionados
 for(i in files) {
@@ -155,10 +155,12 @@ for(i in files) {
   # Caso não existam alguma das colunas abaixo, criar a coluna
   # e preenche com NA
   
-  if(!any(grepl("3",colnames(df)))) df$data_3 <- NA
+  if(!any(grepl("^3",colnames(df)))) df$data_3 <- NA
   if(!any(grepl("4",colnames(df)))) df$data_4 <- NA
   if(!any(grepl("5",colnames(df)))) df$data_5 <- NA
   if(!any(grepl("DA",colnames(df)))) df$data_DA <- NA
+  if(!any(grepl("R2",colnames(df)))) df$data_R2 <- NA
+  if(!any(grepl("R3",colnames(df)))) df$data_R3 <- NA
 
   # Converte todas as colunas com `data_` em formato Date  
   df <- df %>%
@@ -180,10 +182,13 @@ for(i in files) {
                       dif4 = as.numeric(data_4 - first.day),
                       dif5 = as.numeric(data_5 - first.day),
                       
-                      difU = as.numeric(data_D - first.day))
+                      difU = as.numeric(data_D - first.day),
+                      
+                      difR2 = as.numeric(data_R2 - first.day),
+                      difR3 = as.numeric(data_R3 - first.day))
   
   # Seleciona apenas as colunas com a diferença das datas em relação à data de referência (números inteiros)  
-  df2 <- df[,c("dif1","dif2","difA","difR","dif3","dif4","dif5","difU")]
+  df2 <- df[,c("dif1","dif2","difA","difR","dif3","dif4","dif5","difU","difR3","difR2")]
   
   # Identificação dos registros em que a primeira dose é Janssen
   min_dif <- apply(df2, 1, which_min)

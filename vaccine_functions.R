@@ -14,8 +14,20 @@ if(!require(optparse)){install.packages("scales"); library(optparse)}
 
 doses_nomes <- function(x){
   
-  if(grepl("Reforço",x,ignore.case = T)){
+  if(grepl("^Reforço",x,ignore.case = T)){
     return("R")
+  }
+  
+  if(grepl("2º Reforço",x,ignore.case = T)){
+    return("R2")
+  }
+  
+  if(grepl("3º Reforço",x,ignore.case = T)){
+    return("R3")
+  }
+  
+  if(grepl("Reforço",x,ignore.case = T)){
+    return("Ro")
   }
   
   if(grepl("1",x)){
@@ -116,7 +128,7 @@ prepare_table <- function(estado,
       before_rem_dupli = nrow(todas_vacinas)
       
       todas_vacinas <- todas_vacinas %>% 
-        distinct(paciente_id,vacina_descricao_dose,.keep_all = TRUE) %>% 
+      # distinct(paciente_id,vacina_descricao_dose,.keep_all = TRUE) %>% 
         distinct(paciente_id,vacina_dataAplicacao,.keep_all = TRUE)
       
       after_rem_dupli = nrow(todas_vacinas)
@@ -206,29 +218,37 @@ prepare_table <- function(estado,
       
       after_filter_doseid = nrow(todas_vacinas)
       
+      # Calcula quando existe mais de um tipo de dose por id_individuo
+      
+      same_dose_id <- todas_vacinas %>%
+        group_by(id, doses) %>%
+        mutate(m = 1:n()) %>%
+        filter(m > 1) %>%
+        nrow()
+      
       # Filtra se tiver mais de um tipo de dose por id_individuo
       
-      ## Encontra ids com mais deu um tipo de dose por id_individuo
-      before_remove_id = nrow(todas_vacinas)
-      
-      remove_ids <- todas_vacinas %>% 
-        group_by(id, doses) %>% 
-        mutate(m = n()) %>% 
-        ungroup() %>%
-        filter(m > 1) %>%
-        select(id)
-      
-      ## Caso encontre id_individuos com esta condição, remove do banco de dados
-      if(nrow(remove_ids)>0) {
-        todas_vacinas = todas_vacinas %>% 
-          filter(!(id %in% remove_ids$id)) %>% 
-          mutate(id = droplevels(id))
-      }
-      
-      after_remove_id = nrow(todas_vacinas)
-      
-      ## Remove objeto com identificação dos id_individuos com repetição do doses, e limpa memória ram
-      rm(remove_ids);gc()
+      # ## Encontra ids com mais deu um tipo de dose por id_individuo
+      # before_remove_id = nrow(todas_vacinas)
+      # 
+      # remove_ids <- todas_vacinas %>% 
+      #   group_by(id, doses) %>% 
+      #   mutate(m = n()) %>% 
+      #   ungroup() %>%
+      #   filter(m > 1) %>%
+      #   select(id)
+      # 
+      # ## Caso encontre id_individuos com esta condição, remove do banco de dados
+      # if(nrow(remove_ids)>0) {
+      #   todas_vacinas = todas_vacinas %>% 
+      #     filter(!(id %in% remove_ids$id)) %>% 
+      #     mutate(id = droplevels(id))
+      # }
+      # 
+      # after_remove_id = nrow(todas_vacinas)
+      # 
+      # ## Remove objeto com identificação dos id_individuos com repetição do doses, e limpa memória ram
+      # rm(remove_ids);gc()
       
       # Calcula a idade no momento da primeira dose
       
@@ -258,8 +278,9 @@ prepare_table <- function(estado,
                               after_filter_vac = after_filter_vac,
                               before_filter_doseid = before_filter_doseid,
                               after_filter_doseid = after_filter_doseid,
-                              before_remove_id = before_remove_id,
-                              after_remove_id = after_remove_id,
+                              same_dose_id = same_dose_id,
+                             # before_remove_id = before_remove_id,
+                             # after_remove_id = after_remove_id,
                               state = estado,
                               indice = indice)
       
@@ -269,7 +290,7 @@ prepare_table <- function(estado,
         
         # Acrescenta o log para o arquivo anterior
         
-        log_table_todos <- read.csv(paste0(output_folder,"log/",filename))
+        log_table_todos <- read.csv(paste0(output_folder,"log/",filename), row.names = FALSE)
         log_table_todos <- bind_rows(log_table_todos, log_table)
         write.csv(log_table_todos, file = paste0(output_folder, "log/", filename))
         
@@ -314,7 +335,7 @@ prepare_table <- function(estado,
     before_rem_dupli = nrow(todas_vacinas) 
       
     todas_vacinas <- todas_vacinas %>% 
-      distinct(paciente_id,vacina_descricao_dose,.keep_all = TRUE) %>% 
+     #distinct(paciente_id,vacina_descricao_dose,.keep_all = TRUE) %>% 
       distinct(paciente_id,vacina_dataAplicacao,.keep_all = TRUE)
     
     after_rem_dupli = nrow(todas_vacinas)
@@ -404,29 +425,35 @@ prepare_table <- function(estado,
     
     after_filter_doseid = nrow(todas_vacinas)
     
-    # Filtra se tiver mais de um tipo de dose por id_individuo
+    # Calcula quando existe mais de um tipo de dose por id_individuo
     
-    ## Encontra ids com mais deu um tipo de dose por id_individuo      
-    before_remove_id = nrow(todas_vacinas)
-    
-    remove_ids <- todas_vacinas %>% 
-      group_by(id, doses) %>% 
-      mutate(m = n()) %>% 
-      ungroup() %>%
-      filter(m > 1) %>%
-      select(id)
-    
-    ## Caso encontre id_individuos com esta condição, remove do banco de dados
-    if(nrow(remove_ids)>0) {
-      todas_vacinas = todas_vacinas %>% 
-        filter(!(id %in% remove_ids$id)) %>% 
-        mutate(id = droplevels(id))
-    }
-  
-    after_remove_id = nrow(todas_vacinas)
+    same_dose_id <- todas_vacinas %>%
+                        group_by(id, doses) %>%
+                        mutate(m = 1:n()) %>%
+                        filter(m > 1) %>%
+                        nrow()
+      
+    # ## Encontra ids com mais deu um tipo de dose por id_individuo      
+    # before_remove_id = nrow(todas_vacinas)
+    # 
+    # remove_ids <- todas_vacinas %>% 
+    #   group_by(id, doses) %>% 
+    #   mutate(m = n()) %>% 
+    #   ungroup() %>%
+    #   filter(m > 1) %>%
+    #   select(id)
+    # 
+    # ## Caso encontre id_individuos com esta condição, remove do banco de dados
+    # if(nrow(remove_ids)>0) {
+    #   todas_vacinas = todas_vacinas %>% 
+    #     filter(!(id %in% remove_ids$id)) %>% 
+    #     mutate(id = droplevels(id))
+    # }
+    # 
+    # after_remove_id = nrow(todas_vacinas)
     
   ## Remove objeto com identificação dos id_individuos com repetição do doses, e limpa memória ram
-  rm(remove_ids);gc()
+  #rm(remove_ids);gc()
   
   # Calcula a idade no momento da primeira dose
   todas_vacinas <- todas_vacinas%>% 
@@ -456,8 +483,9 @@ prepare_table <- function(estado,
                           before_filter_vac = before_filter_vac,
                           after_filter_vac = after_filter_vac,
                           before_filter_doseid = before_filter_doseid,
-                          after_filter_doseid = after_filter_doseid,
-                          before_remove_id = before_remove_id,
+                          same_dose_id = same_dose_id,
+                         # after_filter_doseid = after_filter_doseid,
+                        #  before_remove_id = before_remove_id,
                           after_remove_id = after_remove_id,
                           state = estado,
                           indice = 0)
@@ -468,7 +496,7 @@ prepare_table <- function(estado,
   
   # Acrescenta o log para o arquivo anterior
     
-  log_table_todos <- read.csv(paste0(output_folder,"log/",filename))
+  log_table_todos <- read.csv(paste0(output_folder,"log/",filename), row.names = FALSE)
   log_table_todos <- bind_rows(log_table_todos, log_table)
   write.csv(log_table_todos, file = paste0(output_folder, "log/", filename))
   
@@ -738,7 +766,7 @@ prepara_historico <- function(estado = "SP",
                 names_from = doses,
                 values_from = c(data, vacina),
                 values_fn = first,
-                values_fill = NA) %>%
+                values_fill = NA) #%>%
     
   # Une a tabela em formato wide com a classificação da faixa etária de cada grupo    
     left_join(tabela_id_idade, by = "id",
