@@ -1,10 +1,9 @@
 require(tidyverse)
 
-log2 <- read.csv("output/log/log_cobertura_2022_07_05.csv")
-log2 <- log[,31:ncol(log2)]
+log2 <- read.csv("../vacinas/output/log/log_cobertura_2022_07_12.csv")
 
-loga <- read.csv("output/log/log_2022_07_05.csv")
-loga <- loga[,33:ncol(loga)]
+loga <- read.csv("../vacinas/output/log/log_2022_07_12.csv")
+
 
 unique(logb$state) == unique(loga$state)
 

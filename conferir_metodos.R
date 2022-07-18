@@ -144,7 +144,7 @@ dif_all = s3 %>% filter(dose %in% c("D1cum","D2cum","D3cum","Dcum")) %>%
 ggsave(dif_all, file = "figuras/metodo/todas_doses_brasil.png", dpi = 300, width = 12, height = 8)
 
 #################################################
-######## Conferir cobertura ao longo do tempo
+######## Conferir cobertura para dados por município
 #################################################
 
 ibge <- read_csv2("../vacinas/dados/municipios_codigos.csv")
@@ -153,63 +153,8 @@ ibge2 <- ibge %>% select(`Código Município Completo`, Nome_UF) %>%
          UF = Nome_UF) %>%
   mutate(codigo = factor(substr(codigo,1,6)))
 
-mun = fread("municipios/sipni_muni_aplicacao_long.csv.gz")
-#"output/sipni_muni_aplicacao_agrupado.csv.gz"
-
-pac_long <- mun %>%
-  gather(key = "key", value = "n", -muni_pac) %>%
-  mutate(SE = substr(key, 8, nchar(key)) %>% 
-           sub("_", "", x = .) %>%
-           sub("F", "", x = .) %>%
-           sub("M", "", x = .) %>%
-           as.numeric(),
-         dose = factor(substr(key, 2,2)),
-         agegroup = factor(gsub("_","",substr(key, 5,6)), ordered = T),
-         sex = factor(ifelse(grepl("F", key), "F", "M"))) %>%
-  select(-key) %>%
-  arrange(muni_pac, dose, agegroup, SE) %>%
-  rename(codigo_municipio = muni_pac)
-
 source("C:/Users/morde/OneDrive/RWorkspace/Covid19/pega_pop_datasus_fx_regiao (1).R")
 pop = tabnet_pop()
-
-pop2 = pop %>% 
-  select(-ano, -sexo, -Total) %>%
-  gather(key = "AG", value = "n", -codreg, -nome_regiao) %>%
-  group_by(AG) %>% summarise(t = sum(n))
-
-q = data.frame(AG = c("A","B","C","D"),
-               total = c(pop2[c(1,7),2] %>% sum(),
-                         pop2[c(2,3),2] %>% sum(),
-                         pop2[c(4:6,8),2] %>% sum(),
-                         pop2[c(9:11),2] %>% sum()))
-
-x = apl_long %>% 
-#  mutate(codigo_municipio = factor(codigo_municipio)) %>%
- # left_join(ibge2, by = c("codigo_municipio" = "codigo"), na_matches = "never")
-  group_by(SE, dose, agegroup) %>%
-  summarise(m = sum(n)) %>%
-  ungroup() %>%
-  left_join(q, by = c("agegroup" = "AG")) %>%
-  mutate(p = m/total*100)
-
-ggplot(x, aes(x = SE, y= p, color = factor(agegroup))) +
-  geom_line(size = 1) +
-  facet_wrap(~dose) +
-  ylab("\nCobertura estimada") + xlab("\nSemana Epidemiológica") +
-  scale_color_discrete("Grupo Etário", labels = c("0-9","10-19","20-59","60+")) +
-  theme_minimal()
-
-
-#####
-###### Conferir cobertura ao longo do tempo (municipio de aplicaacao)
-
-mun = fread("municipios/sipni_muni_aplicacao_long.csv.gz")
-#"output/sipni_muni_aplicacao_agrupado.csv.gz"
-
-#source("C:/Users/morde/OneDrive/RWorkspace/Covid19/pega_pop_datasus_fx_regiao (1).R")
-#pop = tabnet_pop()
-
 pop2 = pop %>% 
   select(-ano, -sexo, -Total) %>%
   gather(key = "AG", value = "n", -codreg, -nome_regiao) %>%
@@ -221,28 +166,11 @@ pop4 = pop3 %>% mutate(agegroup = factor(c(1,1,2,2,3:9))) %>%
   group_by(agegroup) %>%
   summarise(total =sum(t))
 
-x = mun %>% 
-  mutate(agegroup = gsub(10,9,agegroup)) %>%
-  #  mutate(codigo_municipio = factor(codigo_municipio)) %>%
-  # left_join(ibge2, by = c("codigo_municipio" = "codigo"), na_matches = "never")
-  group_by(SE, dose, agegroup) %>%
-  summarise(m = sum(n)) %>%
-  ungroup() %>%
-  mutate(agegroup = factor(agegroup)) %>%
-  left_join(pop4, by = c("agegroup")) %>%
-  mutate(p = m/total*100)
+mun = fread("municipios/sipni_muni_aplicacao_long.csv.gz")
 
-ggplot(x, aes(x = SE, y= p, color = factor(agegroup))) +
-  geom_line(size = 1) +
-  facet_wrap(~dose) +
-  ylab("\nCobertura estimada") + xlab("\nSemana Epidemiológica") +
-  scale_color_discrete("Grupo Etário") + #, labels = c("0-9","10-19","20-59","60+")) +
-  theme_minimal()
-
-###
 cobertura <- mun %>% 
               mutate(agegroup = gsub(10,9,agegroup)) %>%
-              filter(SE == 80) %>%
+              filter(max(mun$SE, na.rm = T)) %>%
               group_by(dose, agegroup) %>%
               summarise(m = sum(n)) %>%
               ungroup() %>%
@@ -274,7 +202,9 @@ gcov <- ggplot(cobertura, aes(x = agegroup, y= p, fill = dose)) +
 
 ggsave(gcov, file = "figuras/cobertura_idades.png", dpi = 300, width = 12, height = 8)
 
-###### Conferir cobertura por UF
+#################################################
+###### Conferir cobertura por UF (dados por município)
+#################################################
 
 pop_uf = tabnet_pop(qnivel = "uf")
 
@@ -328,7 +258,6 @@ gcov_uf <- ggplot(cobertura_uf, aes(x = agegroup, y= p, fill = dose)) +
         plot.background = element_rect(fill = 'white', color = "white"))
 
 ggsave(gcov_uf, file = "figuras/cobertura_idades_uf.png", dpi = 300, width = 12, height = 8)
-
 
 #########################
 ######### CONFERIR DIFERENCA ENTRE BASES DE DATAS DIFERENTES PELA COBERTURA

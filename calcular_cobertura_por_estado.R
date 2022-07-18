@@ -396,7 +396,7 @@ for(i in files) {
     
     # Acrescenta o log para o arquivo anterior
     
-    log_table_todos <- read.csv(paste0(output_folder,"log/",filename))
+    log_table_todos <- read.csv(paste0(output_folder,"log/",filename), row.names = 1)
     log_table_todos <- bind_rows(log_table_todos, log_table)
     write.csv(log_table_todos, file = paste0(output_folder, "log/", filename))
     
@@ -723,7 +723,7 @@ for(i in files) {
     
     # Acrescenta o log para o arquivo anterior
     
-    log_table_todos <- read.csv(paste0(output_folder,"log/",filename))
+    log_table_todos <- read.csv(paste0(output_folder,"log/",filename), row.names = 1)
     log_table_todos <- bind_rows(log_table_todos, log_table)
     write.csv(log_table_todos, file = paste0(output_folder, "log/", filename))
     

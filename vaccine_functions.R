@@ -290,7 +290,7 @@ prepare_table <- function(estado,
         
         # Acrescenta o log para o arquivo anterior
         
-        log_table_todos <- read.csv(paste0(output_folder,"log/",filename), row.names = FALSE)
+        log_table_todos <- read.csv(paste0(output_folder,"log/",filename), row.names = 1)
         log_table_todos <- bind_rows(log_table_todos, log_table)
         write.csv(log_table_todos, file = paste0(output_folder, "log/", filename))
         
@@ -486,7 +486,7 @@ prepare_table <- function(estado,
                           same_dose_id = same_dose_id,
                          # after_filter_doseid = after_filter_doseid,
                         #  before_remove_id = before_remove_id,
-                          after_remove_id = after_remove_id,
+                          #after_remove_id = after_remove_id,
                           state = estado,
                           indice = 0)
   
@@ -496,7 +496,7 @@ prepare_table <- function(estado,
   
   # Acrescenta o log para o arquivo anterior
     
-  log_table_todos <- read.csv(paste0(output_folder,"log/",filename), row.names = FALSE)
+  log_table_todos <- read.csv(paste0(output_folder,"log/",filename), row.names = 1)
   log_table_todos <- bind_rows(log_table_todos, log_table)
   write.csv(log_table_todos, file = paste0(output_folder, "log/", filename))
   

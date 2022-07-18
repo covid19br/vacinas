@@ -30,6 +30,9 @@ contar_doses_municipio <- function(estado,
                           output_folder = "output/",
                           data_base = "2022-05-10",
                           split = FALSE) {
+  
+  data_base_title <- format(as.Date(data_base), format = "%Y_%m_%d")
+  
   if(split){
     pattern <- paste0("split_sorted_limpo_dados_",data_base,"_",estado)
     arquivos <- grep(pattern, list.files(input_folder), value = T)
@@ -58,6 +61,35 @@ contar_doses_municipio <- function(estado,
       
       print(paste0(estado, " data succesfully loaded. Preparing data: split #",indice))
       
+      df.log <- data.frame(paciente_id = sum(is.na(vacinas$paciente_id)),
+                 paciente_dataNascimento = sum(is.na(vacinas$paciente_dataNascimento)),
+                 vacina_dataAplicacao = sum(is.na(vacinas$vacina_dataAplicacao)),
+                 paciente_enumSexoBiologico = sum(is.na(vacinas$paciente_enumSexoBiologico)),
+                 paciente_enumSexoBiologico_empty = sum(vacinas$paciente_enumSexoBiologico == ""),
+                 paciente_enumSexoBiologico_n = length(unique(paciente_enumSexoBiologico)),
+                 paciente_endereco_uf = sum(is.na(vacinas$paciente_endereco_uf)),
+                 paciente_endereco_coIbgeMunicipio = sum(is.na(vacinas$paciente_endereco_coIbgeMunicipio)),
+                 estabelecimento_municipio_codigo = sum(is.na(vacinas$estabelecimento_municipio_codigo)),
+                 file = arquivo,
+                 indice = indice)
+      
+      filename <- paste0("log_municipios_", data_base_title,".csv")
+      
+      if(any(grepl(filename, list.files(paste0(output_folder,"log/"))))) {
+        
+        # Acrescenta o log para o arquivo anterior
+        
+        log_table_todos <- read.csv(paste0(output_folder,"log/",filename), row.names = 1)
+        log_table_todos <- bind_rows(log_table_todos, df.log)
+        write.csv(log_table_todos, file = paste0(output_folder, "log/", filename))
+        
+      } else {
+        
+        # Cria um arquivo novo
+        write.csv(df.log, file = paste0(output_folder, "log/", filename))
+        
+      }
+      
       vacinas$paciente_id <- factor(vacinas$paciente_id)
       
       vacinas[vacinas == ""] <- NA
@@ -72,19 +104,13 @@ contar_doses_municipio <- function(estado,
         mutate(paciente_enumSexoBiologico = droplevels(paciente_enumSexoBiologico))
       
       # Filtrar municipios de residencia com poucos registros
-      muni_excluir <- vacinas %>% count(paciente_endereco_coIbgeMunicipio) %>% filter(n <= 10) %>% select(-n)
+     # muni_excluir <- vacinas %>% count(paciente_endereco_coIbgeMunicipio) %>% filter(n <= 10) %>% select(-n)
       
       colnames(vacinas) <- c("id", "nasc", "date","sexo","muni_pac","muni_apli")
       
-      # Filter ids with more than 3 doses and compute age at first dose  
+      # Filter doses with more than 3 doses and compute age at first dose  
       
       vacinas <- vacinas %>% 
-        group_by(id) %>%
-        mutate(n = n()) %>%
-        ungroup() %>%
-        filter(n < 4) %>%
-        select(-n) %>%
-        
         group_by(id) %>% 
         mutate(nasc = min(nasc, na.rm = T)) %>%
         ungroup() %>%
@@ -100,13 +126,14 @@ contar_doses_municipio <- function(estado,
         arrange(id, date) %>% 
         group_by(id) %>% 
         mutate(doses = 1:n()) %>%
-        ungroup()
+        ungroup() %>%
+        filter(n < 4)
       
       vac_muni_pac <- vacinas %>%
         filter(muni_pac != c("None")) %>%
         filter(muni_pac != c("999999")) %>%
         drop_na(muni_pac) %>%
-        anti_join(muni_excluir, by = c("muni_pac" = "paciente_endereco_coIbgeMunicipio")) %>%
+        #anti_join(muni_excluir, by = c("muni_pac" = "paciente_endereco_coIbgeMunicipio")) %>%
         select(muni_pac, doses, agegroup, sexo, SE) %>%
         drop_na() %>%
         mutate(muni_pac = factor(muni_pac, levels = unique(muni_pac)),
@@ -188,6 +215,35 @@ contar_doses_municipio <- function(estado,
     
     print(paste0(estado, " data succesfully loaded. Preparing data... 1"))
     
+    df.log <- data.frame(paciente_id = sum(is.na(vacinas$paciente_id)),
+                         paciente_dataNascimento = sum(is.na(vacinas$paciente_dataNascimento)),
+                         vacina_dataAplicacao = sum(is.na(vacinas$vacina_dataAplicacao)),
+                         paciente_enumSexoBiologico = sum(is.na(vacinas$paciente_enumSexoBiologico)),
+                         paciente_enumSexoBiologico_empty = sum(vacinas$paciente_enumSexoBiologico == ""),
+                         paciente_enumSexoBiologico_n = length(unique(paciente_enumSexoBiologico)),
+                         paciente_endereco_uf = sum(is.na(vacinas$paciente_endereco_uf)),
+                         paciente_endereco_coIbgeMunicipio = sum(is.na(vacinas$paciente_endereco_coIbgeMunicipio)),
+                         estabelecimento_municipio_codigo = sum(is.na(vacinas$estabelecimento_municipio_codigo)),
+                         file = arquivo,
+                         indice = indice)
+    
+    filename <- paste0("log_municipios_", data_base_title,".csv")
+    
+    if(any(grepl(filename, list.files(paste0(output_folder,"log/"))))) {
+      
+      # Acrescenta o log para o arquivo anterior
+      
+      log_table_todos <- read.csv(paste0(output_folder,"log/",filename), row.names = 1)
+      log_table_todos <- bind_rows(log_table_todos, df.log)
+      write.csv(log_table_todos, file = paste0(output_folder, "log/", filename))
+      
+    } else {
+      
+      # Cria um arquivo novo
+      write.csv(df.log, file = paste0(output_folder, "log/", filename))
+      
+    }
+    
     vacinas$paciente_id <- factor(vacinas$paciente_id)
     
     vacinas[vacinas == ""] <- NA
@@ -202,20 +258,15 @@ contar_doses_municipio <- function(estado,
       mutate(paciente_enumSexoBiologico = droplevels(paciente_enumSexoBiologico))
   
     # Filtrar municipios de residencia com poucos registros
-    muni_excluir <- vacinas %>% count(paciente_endereco_coIbgeMunicipio) %>% filter(n <= 10) %>% select(-n)
+   # muni_excluir <- vacinas %>% count(paciente_endereco_coIbgeMunicipio) %>% filter(n <= 10) %>% select(-n)
     
     colnames(vacinas) <- c("id", "nasc", "date","sexo","muni_pac","muni_apli")
   
     # Filter ids with more than 3 doses and compute age at first dose  
     
     vacinas <- vacinas %>% 
-      group_by(id) %>%
-      mutate(n = n()) %>%
-      ungroup() %>%
-      filter(n < 4) %>%
-      select(-n) %>%
-      
-      group_by(id) %>% 
+
+            group_by(id) %>% 
       mutate(nasc = min(nasc, na.rm = T)) %>%
       ungroup() %>%
       mutate(idade = as.numeric(date - nasc) %/% 365.25) %>% 
@@ -230,13 +281,14 @@ contar_doses_municipio <- function(estado,
       arrange(id, date) %>% 
       group_by(id) %>% 
       mutate(doses = 1:n()) %>%
-      ungroup()
+      ungroup() %>%
+      filter(n < 4)
     
     vac_muni_pac <- vacinas %>%
       filter(muni_pac != c("None")) %>%
       filter(muni_pac != c("999999")) %>%
       drop_na(muni_pac) %>%
-      anti_join(muni_excluir, by = c("muni_pac" = "paciente_endereco_coIbgeMunicipio")) %>%
+      #anti_join(muni_excluir, by = c("muni_pac" = "paciente_endereco_coIbgeMunicipio")) %>%
       select(muni_pac, doses, agegroup, sexo, SE) %>%
       drop_na() %>%
       mutate(muni_pac = factor(muni_pac, levels = unique(muni_pac)),
