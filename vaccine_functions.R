@@ -663,7 +663,7 @@ prepara_historico <- function(estado = "SP",
   
   # Une a tabela em formato wide com a classificação da faixa etária de cada grupo  
   tabela_wide_split = tabela_wide_split %>%
-                        right_join(tabela_id_idade, by = "id", na_matches = "never") %>% 
+                        left_join(tabela_id_idade, by = "id", na_matches = "never") %>% 
                         select(-id)
   
   # Remove tabela 'todas_vacinas' e limpa a memória ram
@@ -766,7 +766,7 @@ prepara_historico <- function(estado = "SP",
                 names_from = doses,
                 values_from = c(data, vacina),
                 values_fn = first,
-                values_fill = NA) #%>%
+                values_fill = NA) %>%
     
   # Une a tabela em formato wide com a classificação da faixa etária de cada grupo    
     left_join(tabela_id_idade, by = "id",

@@ -66,7 +66,7 @@ contar_doses_municipio <- function(estado,
                  vacina_dataAplicacao = sum(is.na(vacinas$vacina_dataAplicacao)),
                  paciente_enumSexoBiologico = sum(is.na(vacinas$paciente_enumSexoBiologico)),
                  paciente_enumSexoBiologico_empty = sum(vacinas$paciente_enumSexoBiologico == ""),
-                 paciente_enumSexoBiologico_n = length(unique(paciente_enumSexoBiologico)),
+                 paciente_enumSexoBiologico_n = length(unique(vacinas$paciente_enumSexoBiologico)),
                  paciente_endereco_uf = sum(is.na(vacinas$paciente_endereco_uf)),
                  paciente_endereco_coIbgeMunicipio = sum(is.na(vacinas$paciente_endereco_coIbgeMunicipio)),
                  estabelecimento_municipio_codigo = sum(is.na(vacinas$estabelecimento_municipio_codigo)),
@@ -220,12 +220,12 @@ contar_doses_municipio <- function(estado,
                          vacina_dataAplicacao = sum(is.na(vacinas$vacina_dataAplicacao)),
                          paciente_enumSexoBiologico = sum(is.na(vacinas$paciente_enumSexoBiologico)),
                          paciente_enumSexoBiologico_empty = sum(vacinas$paciente_enumSexoBiologico == ""),
-                         paciente_enumSexoBiologico_n = length(unique(paciente_enumSexoBiologico)),
+                         paciente_enumSexoBiologico_n = length(unique(vacinas$paciente_enumSexoBiologico)),
                          paciente_endereco_uf = sum(is.na(vacinas$paciente_endereco_uf)),
                          paciente_endereco_coIbgeMunicipio = sum(is.na(vacinas$paciente_endereco_coIbgeMunicipio)),
                          estabelecimento_municipio_codigo = sum(is.na(vacinas$estabelecimento_municipio_codigo)),
                          file = arquivo,
-                         indice = indice)
+                         indice = 1)
     
     filename <- paste0("log_municipios_", data_base_title,".csv")
     

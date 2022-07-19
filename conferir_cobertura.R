@@ -12,6 +12,7 @@
 dados = fread("doses_cobertura_proporcao_semana.csv") %>% data.frame() %>% mutate(week = as.Date(week))
 dados_o = fread("doses_cobertura_proporcao_semana_ordem.csv") %>% data.frame()
 
+source("C:/Users/morde/OneDrive/RWorkspace/Covid19/pega_pop_datasus_fx_regiao (1).R")
 pop_uf = tabnet_pop(qnivel = "uf")
 siglas <- read.csv("siglas_estados.txt", sep =",")
 
