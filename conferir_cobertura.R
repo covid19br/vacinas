@@ -7,7 +7,8 @@
   if(!require(scales)){install.packages("scales"); library(scales)}
   if(!require(optparse)){install.packages("scales"); library(optparse)}
 
-
+  #setwd("C:/Users/morde/Documents/GitHub/dados-vacinas")
+  
 # Load data
 dados = fread("doses_cobertura_proporcao_semana.csv") %>% data.frame() %>% mutate(week = as.Date(week))
 dados_o = fread("doses_cobertura_proporcao_semana_ordem.csv") %>% data.frame()
@@ -97,7 +98,7 @@ gufc <- dados2 %>%
   geom_col() +
   scale_fill_viridis_d("Dose", labels = c("D1","D2","R","D")) +
   ylab("Cobertura\n") + xlab("\nGrupo etário") +
-  ylim(0,125) +
+  ylim(0,160) +
   facet_wrap(~UF) +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 90),
@@ -110,7 +111,7 @@ gufo <- dados3 %>%
   geom_col() +
   scale_fill_viridis_d("Dose", labels = c("D1","D2","D3","D4","D5")) +
   ylab("Cobertura\n") + xlab("\nGrupo etário") +
-  ylim(0,125) +
+  ylim(0,160) +
   facet_wrap(~UF) +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 90),

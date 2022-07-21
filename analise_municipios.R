@@ -28,7 +28,7 @@ end.of.epiweek <- function(x, end = 6) {
 contar_doses_municipio <- function(estado,
                           input_folder = "dados/",
                           output_folder = "output/",
-                          data_base = "2022-05-10",
+                          data_base = "2022-07-19",
                           split = FALSE) {
   
   data_base_title <- format(as.Date(data_base), format = "%Y_%m_%d")
@@ -127,7 +127,7 @@ contar_doses_municipio <- function(estado,
         group_by(id) %>% 
         mutate(doses = 1:n()) %>%
         ungroup() %>%
-        filter(n < 4)
+        filter(doses < 4)
       
       vac_muni_pac <- vacinas %>%
         filter(muni_pac != c("None")) %>%
@@ -282,7 +282,7 @@ contar_doses_municipio <- function(estado,
       group_by(id) %>% 
       mutate(doses = 1:n()) %>%
       ungroup() %>%
-      filter(n < 4)
+      filter(doses < 4)
     
     vac_muni_pac <- vacinas %>%
       filter(muni_pac != c("None")) %>%
