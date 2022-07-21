@@ -70,7 +70,7 @@ contar_doses_municipio <- function(estado,
                  paciente_endereco_uf = sum(is.na(vacinas$paciente_endereco_uf)),
                  paciente_endereco_coIbgeMunicipio = sum(is.na(vacinas$paciente_endereco_coIbgeMunicipio)),
                  estabelecimento_municipio_codigo = sum(is.na(vacinas$estabelecimento_municipio_codigo)),
-                 file = arquivo,
+                 state = estado,
                  indice = indice)
       
       filename <- paste0("log_municipios_", data_base_title,".csv")
@@ -224,7 +224,7 @@ contar_doses_municipio <- function(estado,
                          paciente_endereco_uf = sum(is.na(vacinas$paciente_endereco_uf)),
                          paciente_endereco_coIbgeMunicipio = sum(is.na(vacinas$paciente_endereco_coIbgeMunicipio)),
                          estabelecimento_municipio_codigo = sum(is.na(vacinas$estabelecimento_municipio_codigo)),
-                         file = arquivo,
+                         state = estado,
                          indice = 1)
     
     filename <- paste0("log_municipios_", data_base_title,".csv")
