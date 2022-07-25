@@ -167,7 +167,7 @@ if [ $process ]; then
 
     echo "counting doses for all states"
     Rscript calcular_cobertura_por_estado.R
-	Rscript calcular_ordem_por_estado.R
+	Rscript calcular_ordem_por_estado_v2.R
 	Rscript analise_municipios.R
     echo "done"
 
