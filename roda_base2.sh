@@ -182,7 +182,7 @@ fi
 
 if [ $remove ]; then
     echo "== Removendo arquivos baixados e limpos"
-	rm -v output/*_PNI_clean.csv
+	#rm -v output/*_PNI_clean.csv
     rm -v dados/dados_${lastdate}_*.csv dados/limpo_dados_${lastdate}_*.csv
     rm -v dados/split_sorted_limpo_dados_${lastdate}_*_*.csv
 fi
