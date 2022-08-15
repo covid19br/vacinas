@@ -7,6 +7,7 @@
   if(!require(scales)){install.packages("scales"); library(scales)}
   if(!require(optparse)){install.packages("scales"); library(optparse)}
 
+  #setwd("C:/Users/morde/Documents/GitHub/vacinas/output")
   #setwd("C:/Users/morde/Documents/GitHub/dados-vacinas")
   
 # Load data
@@ -121,5 +122,5 @@ gufo <- dados3 %>%
 # Save files
 
 ggsave(gufc, file = "figuras/metodo/cobertura_uf.png", dpi = 300, width = 12, height = 8)
-ggsave(gufo, file = "figuras/metodo/cobertura_uf_ordem.png", dpi = 300, width = 12, height = 8)
+ggsave(gufo, file = "figuras/metodo/cobertura_uf_ordem_2.png", dpi = 300, width = 12, height = 8)
   

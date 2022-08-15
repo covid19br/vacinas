@@ -1,5 +1,3 @@
-setwd("C:/Users/morde/Documents/GitHub/dados-vacinas")
-
 suppressPackageStartupMessages({
   if(!require(data.table)){install.packages("data.table"); library(data.table)}
   if(!require(tidyverse)){install.packages("tidyverse"); library(tidyverse)}
@@ -148,12 +146,14 @@ ggsave(dif_all, file = "figuras/metodo/todas_doses_brasil.png", dpi = 300, width
 #################################################
 
 ibge <- read_csv2("../vacinas/dados/municipios_codigos.csv")
+
 ibge2 <- ibge %>% select(`Código Município Completo`, Nome_UF) %>%
   rename(codigo = `Código Município Completo`,
          UF = Nome_UF) %>%
   mutate(codigo = factor(substr(codigo,1,6)))
 
 source("C:/Users/morde/OneDrive/RWorkspace/Covid19/pega_pop_datasus_fx_regiao (1).R")
+
 pop = tabnet_pop()
 pop2 = pop %>% 
   select(-ano, -sexo, -Total) %>%
@@ -170,7 +170,7 @@ mun = fread("municipios/sipni_muni_aplicacao_long.csv.gz")
 
 cobertura <- mun %>% 
               mutate(agegroup = gsub(10,9,agegroup)) %>%
-              filter(max(mun$SE, na.rm = T)) %>%
+              filter(SE == max(mun$SE, na.rm = T)) %>%
               group_by(dose, agegroup) %>%
               summarise(m = sum(n)) %>%
               ungroup() %>%
@@ -248,6 +248,7 @@ cobertura_uf <- mun %>%
                                       "80+")))
 
 gcov_uf <- ggplot(cobertura_uf, aes(x = agegroup, y= p, fill = dose)) +
+  geom_hline(yintercept = 100) +
   geom_col(position = "identity") +
   scale_fill_viridis_d("Dose") +
   facet_wrap(~UF) +

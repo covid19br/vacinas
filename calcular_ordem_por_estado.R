@@ -122,6 +122,15 @@ data_base <- list.files("dados/") %>%
   as.Date() %>%
   max(na.rm = T)
 
+if(is.infinite(data_base)) {
+  print("Data em '^dados_.*.csv' não encontrada. Tentando ^limpo_dados_.*.csv")
+  data_base <- list.files("dados/") %>% 
+    grep("^limpo_dados_.*.csv", ., value = T) %>%
+    substr(13,22) %>%
+    as.Date() %>%
+    max(na.rm = T)
+}
+
 # Horário e data de início do processamento dos dados
 ini = Sys.time()
 
