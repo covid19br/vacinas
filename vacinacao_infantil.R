@@ -51,11 +51,12 @@ for(f in files) {
   
    UFinfantil_count <- UFinfantil %>%
     mutate(idade = factor(idade, levels = 5:11),
+           ordem = factor(ordem),
            vacina = factor(vacina, levels = c(86,87), labels = c("Coronavac","Pfizer"))) %>%
-    count(week, idade, vacina) %>%
+    count(week, idade, vacina, ordem) %>%
     complete(week = seq.Date(end.of.epiweek(as.Date("2022-01-17")), 
                              end.of.epiweek(as.Date("2022-08-15")), 
-                             by="week"), idade, vacina,
+                             by="week"), idade, vacina, ordem,
              fill = list(n = 0)) %>%
     mutate(state = state)
   
@@ -63,7 +64,7 @@ for(f in files) {
 }
 
 vac_infantil_final <- vac_infantil %>%
-  group_by(week, idade, vacina) %>%
+  group_by(week, idade, vacina, ordem) %>%
   summarise(n = sum(n, na.rm = TRUE))
 
 fwrite(vac_infantil, file = "output/vac_infantil.csv")
