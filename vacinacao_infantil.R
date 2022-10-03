@@ -63,11 +63,13 @@ for(f in files) {
   vac_infantil <- bind_rows(vac_infantil, UFinfantil_count)
 }
 
+vac_infantil <- fread("output/vac_infantil.csv")
+
 vac_infantil_final <- vac_infantil %>%
-  group_by(week, idade, vacina, ordem) %>%
+  group_by(week, idade, vacina, ordem, state) %>%
   summarise(n = sum(n, na.rm = TRUE))
 
-fwrite(vac_infantil, file = "output/vac_infantil.csv")
+fwrite(vac_infantil_final, file = "output/vac_infantil.csv")
 
 ## Plotar resultados
 

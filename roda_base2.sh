@@ -166,9 +166,9 @@ if [ $process ]; then
 	done
 
     echo "counting doses for all states"
-    Rscript calcular_cobertura_por_estado.R
 	Rscript calcular_ordem_por_estado_v2.R
 	Rscript analise_municipios.R
+	Rscript vacinacao_infantil.R
     echo "done"
 
     # limpando arquivos quebrados
@@ -182,7 +182,7 @@ fi
 
 if [ $remove ]; then
     echo "== Removendo arquivos baixados e limpos"
-	#rm -v output/*_PNI_clean.csv
+	rm -v output/*_PNI_clean.csv
     rm -v dados/dados_${lastdate}_*.csv dados/limpo_dados_${lastdate}_*.csv
     rm -v dados/split_sorted_limpo_dados_${lastdate}_*_*.csv
 fi
@@ -195,19 +195,17 @@ if [ $gitupdate ]; then
         popd
     done
 
-	cp "output/doses_ordem_uf.csv" "output/doses_cobertura_proporcao_semana.csv" "output/doses_cobertura_proporcao_mes.csv" $DADOS/
+	cp "output/doses_ordem_uf.csv" "output/vac_infantil.csv" $DADOS/
 	cp "output/doses_cobertura_proporcao_semana_ordem.csv" "output/doses_cobertura_proporcao_mes_ordem.csv" $DADOS/
 	
     pushd $DADOS
-    git add "doses_ordem_uf.csv" "doses_cobertura_proporcao_semana.csv" "doses_cobertura_proporcao_mes.csv"
+    git add "doses_ordem_uf.csv" "vac_infantil.csv"
 	git add "doses_cobertura_proporcao_semana_ordem.csv" "doses_cobertura_proporcao_mes_ordem.csv"
     popd
 	
-	cp "figuras/aplicacao_doses_uf_semana.png" "figuras/aplicacao_doses_semana.png" "figuras/aplicacao_doses_uf_mes.png" "figuras/aplicacao_doses_mes.png" $DADOS/figuras/
 	cp "figuras/aplicacao_doses_uf_semana_ordem.png" "figuras/aplicacao_doses_semana_ordem.png" "figuras/aplicacao_doses_uf_mes_ordem.png" "figuras/aplicacao_doses_mes_ordem.png" $DADOS/figuras/
 	
     pushd $DADOS
-    git add "figuras/aplicacao_doses_uf_semana.png" "figuras/aplicacao_doses_semana.png" "figuras/aplicacao_doses_uf_mes.png" "figuras/aplicacao_doses_mes.png"
 	git add "figuras/aplicacao_doses_uf_semana_ordem.png" "figuras/aplicacao_doses_semana_ordem.png" "figuras/aplicacao_doses_uf_mes_ordem.png" "figuras/aplicacao_doses_mes_ordem.png"
     popd
 	
