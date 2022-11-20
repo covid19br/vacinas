@@ -507,9 +507,9 @@ pac_long <- final_pac %>%
 # Reordenar colunas
 pac_long <- pac_long[,c("codigo_municipio","SE","dose","agegroup","sex","n")]
 
-filename <- "output/sipni_muni_residencia_long.csv.gz"
+filename <- "output/sipni_muni_residencia_long.csv.xz"
 print(paste0("Salvando: ", filename))
-write.csv.gz(pac_long, file = filename)
+write.csv(pac_long, file = xzfile(filename))
 
 #### Formato long: municipio de aplicacao
 
@@ -531,9 +531,9 @@ apl_long <- final_apl %>%
 # Reordenar colunas
 apl_long <- apl_long[,c("codigo_municipio","SE","dose","agegroup","sex","n")]
 
-filename <- "output/sipni_muni_aplicacao_long.csv.gz"
+filename <- "output/sipni_muni_aplicacao_long.csv.xz"
 print(paste0("Salvando: ", filename))
-write.csv.gz(apl_long, file = filename)
+write.csv(apl_long, file = xzfile(filename))
 
 print("Finalizado.")
 ###

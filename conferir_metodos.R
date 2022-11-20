@@ -166,7 +166,7 @@ pop4 = pop3 %>% mutate(agegroup = factor(c(1,1,2,2,3:9))) %>%
   group_by(agegroup) %>%
   summarise(total =sum(t))
 
-mun = fread("municipios/sipni_muni_aplicacao_long.csv.gz")
+mun = read.csv("municipios/sipni_muni_aplicacao_long.csv.xz")
 
 cobertura <- mun %>% 
               mutate(agegroup = gsub(10,9,agegroup)) %>%
