@@ -203,10 +203,10 @@ if [ $gitupdate ]; then
 	git add "figuras/aplicacao_doses_uf_semana_ordem.png" "figuras/aplicacao_doses_semana_ordem.png" "figuras/aplicacao_doses_uf_mes_ordem.png" "figuras/aplicacao_doses_mes_ordem.png"
     popd
 	
-	cp "output/sipni_muni_residencia.csv.gz" "output/sipni_muni_residencia_agrupado.csv.gz" "output/sipni_muni_aplicacao.csv.gz" "output/sipni_muni_aplicacao_agrupado.csv.gz" "output/sipni_muni_residencia_long.csv.gz" "output/sipni_muni_aplicacao_long.csv.gz" $DADOS/municipios
+	cp "output/sipni_muni_residencia.csv.gz" "output/sipni_muni_residencia_agrupado.csv.gz" "output/sipni_muni_aplicacao.csv.gz" "output/sipni_muni_aplicacao_agrupado.csv.gz" "output/sipni_muni_residencia_long.csv.xz" "output/sipni_muni_aplicacao_long.csv.xz" $DADOS/municipios
 	
 	pushd $DADOS
-	git add "municipios/sipni_muni_residencia.csv.gz" "municipios/sipni_muni_residencia_agrupado.csv.gz" "municipios/sipni_muni_aplicacao.csv.gz" "municipios/sipni_muni_aplicacao_agrupado.csv.gz" "municipios/sipni_muni_residencia_long.csv.gz" "municipios/sipni_muni_aplicacao_long.csv.gz"
+	git add "municipios/sipni_muni_residencia.csv.gz" "municipios/sipni_muni_residencia_agrupado.csv.gz" "municipios/sipni_muni_aplicacao.csv.gz" "municipios/sipni_muni_aplicacao_agrupado.csv.gz" "municipios/sipni_muni_residencia_long.csv.xz" "municipios/sipni_muni_aplicacao_long.csv.xz"
     popd
 	
     pushd $DADOS
