@@ -116,8 +116,9 @@ contar_doses_municipio <- function(estado,
         ungroup() %>%
         mutate(idade = as.numeric(date - nasc) %/% 365.25) %>% 
         select(-nasc) %>%
-        mutate(agegroup = factor(cut(idade, 
-                                     c(seq(0,90,10),Inf),
+        mutate(agegroup = factor(cut(idade,
+                                     breaks = c(0,3,5,12,18,seq(30,90,10),Inf),
+                                     #c(seq(0,90,10),Inf),
                                      include.lowest = T, 
                                      right = F,
                                      labels = F))) %>%
@@ -272,7 +273,8 @@ contar_doses_municipio <- function(estado,
       mutate(idade = as.numeric(date - nasc) %/% 365.25) %>% 
       select(-nasc) %>%
       mutate(agegroup = factor(cut(idade, 
-                                   c(seq(0,90,10),Inf),
+                                   c(0,3,5,12,18,seq(30,90,10),Inf),
+                                   #c(seq(0,90,10),Inf),
                                    include.lowest = T, 
                                    right = F,
                                    labels = F))) %>%
@@ -407,8 +409,8 @@ final_pac <- df_pac %>% mutate(muni_pac = factor(muni_pac)) %>% group_by(muni_pa
 
 # Somar colunas com idades 90+ com as colunas 80-89, para tornar 80+
 final_pac2 <- final_pac
-final_pac2[,grep("I9",colnames(final_pac2))] = final_pac2[,grep("I9",colnames(final_pac2))] + final_pac2[,grep("I10",colnames(final_pac2))]
-final_pac2 <- final_pac2[,-grep("I10",colnames(final_pac2))]
+final_pac2[,grep("I12",colnames(final_pac2))] = final_pac2[,grep("I12",colnames(final_pac2))] + final_pac2[,grep("I13",colnames(final_pac2))]
+final_pac2 <- final_pac2[,-grep("I13",colnames(final_pac2))]
 
 # Salvar
 filename <- "output/sipni_muni_residencia.csv.gz"
@@ -418,22 +420,31 @@ write.csv.gz(final_pac2, file = filename)
 # Agrupar em adolescentes, adultos e idosos
 final_pac2 <- final_pac
 
-final_pac2[,grep("I3",colnames(final_pac2))] = final_pac2[,grep("I3",colnames(final_pac2))] + 
-  final_pac2[,grep("I4",colnames(final_pac2))] +
-  final_pac2[,grep("I5",colnames(final_pac2))] +
-  final_pac2[,grep("I6",colnames(final_pac2))] 
+# Crianças
+final_pac2[,grep("I1_",colnames(final_pac2))] = final_pac2[,grep("I1_",colnames(final_pac2))] + 
+  final_pac2[,grep("I2",colnames(final_pac2))] +
+  final_pac2[,grep("I3",colnames(final_pac2))]
 
-final_pac2[,grep("I7",colnames(final_pac2))] = final_pac2[,grep("I7",colnames(final_pac2))] + 
-  final_pac2[,grep("I8",colnames(final_pac2))] +
-  final_pac2[,grep("I9",colnames(final_pac2))] +
-  final_pac2[,grep("I10",colnames(final_pac2))] 
+# Adolescentes: I4
 
-final_pac2 <- final_pac2[,c(1,grep("I1_|I2_|I3_|I7_",colnames(final_pac2)))]
+# Adultos
+final_pac2[,grep("I5",colnames(final_pac2))] = final_pac2[,grep("I5",colnames(final_pac2))] + 
+  final_pac2[,grep("I6",colnames(final_pac2))] +
+  final_pac2[,grep("I7",colnames(final_pac2))] +
+  final_pac2[,grep("I8",colnames(final_pac2))] 
+
+# Idosos
+final_pac2[,grep("I9",colnames(final_pac2))] = final_pac2[,grep("I9",colnames(final_pac2))] + 
+  final_pac2[,grep("I10",colnames(final_pac2))] +
+  final_pac2[,grep("I11",colnames(final_pac2))] +
+  final_pac2[,grep("I12",colnames(final_pac2))] 
+
+final_pac2 <- final_pac2[,c(1,grep("I1_|I4_|I5_|I9_",colnames(final_pac2)))]
 
 colnames(final_pac2) <- gsub("I1_", "IA_", colnames(final_pac2))
-colnames(final_pac2) <- gsub("I2_", "IB_", colnames(final_pac2))
-colnames(final_pac2) <- gsub("I3_", "IC_", colnames(final_pac2))
-colnames(final_pac2) <- gsub("I7_", "ID_", colnames(final_pac2))
+colnames(final_pac2) <- gsub("I4_", "IB_", colnames(final_pac2))
+colnames(final_pac2) <- gsub("I5_", "IC_", colnames(final_pac2))
+colnames(final_pac2) <- gsub("I9_", "ID_", colnames(final_pac2))
 
 # Salvar
 filename <- "output/sipni_muni_residencia_agrupado.csv.gz"
@@ -456,8 +467,8 @@ final_apl <- df_apl %>% mutate(muni_apli = factor(muni_apli)) %>% group_by(muni_
 
 # Agrupar 80-89 e 90+ em 80+
 final_apl2 <- final_apl
-final_apl2[,grep("I9",colnames(final_apl2))] = final_apl2[,grep("I9",colnames(final_apl2))] + final_apl2[,grep("I10",colnames(final_apl2))]
-final_apl2 <- final_apl2[,-grep("I10",colnames(final_apl2))]
+final_apl2[,grep("I12",colnames(final_apl2))] = final_apl2[,grep("I12",colnames(final_apl2))] + final_apl2[,grep("I13",colnames(final_apl2))]
+final_apl2 <- final_apl2[,-grep("I13",colnames(final_apl2))]
 
 filename <- "output/sipni_muni_aplicacao.csv.gz"
 print(paste0("Salvando: ", filename))
@@ -466,22 +477,31 @@ write.csv.gz(final_apl2, file = filename)
 # Agrupar em adolescentes, adultos e idosos
 final_apl2 <- final_apl
 
-final_apl2[,grep("I3",colnames(final_apl2))] = final_apl2[,grep("I3",colnames(final_apl2))] + 
-                                                final_apl2[,grep("I4",colnames(final_apl2))] +
-                                                final_apl2[,grep("I5",colnames(final_apl2))] +
-                                                final_apl2[,grep("I6",colnames(final_apl2))] 
-  
-final_apl2[,grep("I7",colnames(final_apl2))] = final_apl2[,grep("I7",colnames(final_apl2))] + 
-                                                final_apl2[,grep("I8",colnames(final_apl2))] +
-                                                final_apl2[,grep("I9",colnames(final_apl2))] +
-                                                final_apl2[,grep("I10",colnames(final_apl2))] 
+# Crianças
+final_apl2[,grep("I1_",colnames(final_apl2))] = final_apl2[,grep("I1_",colnames(final_apl2))] + 
+  final_apl2[,grep("I2",colnames(final_apl2))] +
+  final_apl2[,grep("I3",colnames(final_apl2))]
 
-final_apl2 <- final_apl2[,c(1,grep("I1_|I2_|I3_|I7_",colnames(final_apl2)))]
+# Adolescentes: I4
+
+# Adultos
+final_apl2[,grep("I5",colnames(final_apl2))] = final_apl2[,grep("I5",colnames(final_apl2))] + 
+  final_apl2[,grep("I6",colnames(final_apl2))] +
+  final_apl2[,grep("I7",colnames(final_apl2))] +
+  final_apl2[,grep("I8",colnames(final_apl2))] 
+
+# Idosos
+final_apl2[,grep("I9",colnames(final_apl2))] = final_apl2[,grep("I9",colnames(final_apl2))] + 
+  final_apl2[,grep("I10",colnames(final_apl2))] +
+  final_apl2[,grep("I11",colnames(final_apl2))] +
+  final_apl2[,grep("I12",colnames(final_apl2))] 
+
+final_apl2 <- final_apl2[,c(1,grep("I1_|I4_|I5_|I9_",colnames(final_apl2)))]
 
 colnames(final_apl2) <- gsub("I1_", "IA_", colnames(final_apl2))
-colnames(final_apl2) <- gsub("I2_", "IB_", colnames(final_apl2))
-colnames(final_apl2) <- gsub("I3_", "IC_", colnames(final_apl2))
-colnames(final_apl2) <- gsub("I7_", "ID_", colnames(final_apl2))
+colnames(final_apl2) <- gsub("I4_", "IB_", colnames(final_apl2))
+colnames(final_apl2) <- gsub("I5_", "IC_", colnames(final_apl2))
+colnames(final_apl2) <- gsub("I9_", "ID_", colnames(final_apl2))
 
 filename <- "output/sipni_muni_aplicacao_agrupado.csv.gz"
 print(paste0("Salvando: ", filename))
@@ -498,7 +518,7 @@ pac_long <- final_pac %>%
                as.numeric(),
          dose = factor(substr(key, 2,2)),
          agegroup = factor(gsub("_","",substr(key, 5,6)), 
-                                levels = 1:10, ordered = T),
+                                levels = 1:12, ordered = T),
          sex = factor(ifelse(grepl("F", key), "F", "M"))) %>%
          select(-key) %>%
          arrange(muni_pac, sex, dose, agegroup, SE) %>%
@@ -522,7 +542,7 @@ apl_long <- final_apl %>%
            as.numeric(),
          dose = factor(substr(key, 2,2)),
          agegroup = factor(gsub("_","",substr(key, 5,6)), 
-                           levels = 1:10, ordered = T),
+                           levels = 1:12, ordered = T),
          sex = factor(ifelse(grepl("F", key), "F", "M"))) %>%
   select(-key) %>%
   arrange(muni_apli, sex, dose, agegroup, SE) %>%

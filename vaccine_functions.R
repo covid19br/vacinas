@@ -258,7 +258,8 @@ prepare_table <- function(estado,
         ungroup() %>%
         mutate(idade = as.numeric(data - nasc) %/% 365.25) %>% 
         select(-nasc) %>%
-        filter(!(idade < 6 & data < as.Date("2022-07-13"))) # Filtra vacinação em menores de 5 anos antes da aprovação pela anvisa
+        filter(!(idade < 6 & data < as.Date("2022-07-13"))) %>% # Filtra vacinação em menores de 6 anos antes da aprovação pela anvisa
+        filter(!(idade < 5 & data < as.Date("2022-09-16"))) # Filtra vacinação em menores de 5 anos antes da aprovação pela anvisa
       
       # Salva dados
       fwrite(todas_vacinas, file = paste0(output_folder, estado,"_",indice, "_PNI_clean.csv"))
@@ -463,7 +464,8 @@ prepare_table <- function(estado,
       ungroup() %>%
       mutate(idade = as.numeric(data - nasc) %/% 365.25) %>% 
       select(-nasc) %>%
-      filter(!(idade < 6 & data < as.Date("2022-07-13"))) # Filtra vacinação em menores de 5 anos antes da aprovação pela anvisa
+      filter(!(idade < 6 & data < as.Date("2022-07-13"))) %>% # Filtra vacinação em menores de 6 anos antes da aprovação pela anvisa
+      filter(!(idade < 5 & data < as.Date("2022-09-16"))) # Filtra vacinação em menores de 5 anos antes da aprovação pela anvisa
   
   # Salva dados  
   filename = paste0(output_folder, estado, "_PNI_clean.csv")
