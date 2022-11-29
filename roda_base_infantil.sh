@@ -126,13 +126,13 @@ if [ $process ]; then
     ####### Estados cujos bancos são analisados sem separação em diferentes arquivos
     estados=("AC" "AL" "AM" "AP" "BA" "CE" "DF" "ES" "GO" "MA" "MG" "MS" "MT" "PA" "PB" "PE" "PI" "PR" "RJ" "RN" "RO" "RR" "RS" "SC" "SE" "TO")
 
-    echo "preparing data for states that doesn't split"
-    for estado in "${estados[@]}"; do
-          Rscript vaccine_functions.R --command prepara_dado --estado $estado --dataBase $lastdate &&
+ #   echo "preparing data for states that doesn't split"
+    #for estado in "${estados[@]}"; do
+     #     Rscript vaccine_functions.R --command prepara_dado --estado $estado --dataBase $lastdate &&
          # Rscript vaccine_functions.R --command prepara_cobertura --estado $estado --dataBase $lastdate &&
          # rm output/${estado}_PNI_clean.csv
-        echo "state ${estado} done"
-    done
+       # echo "state ${estado} done"
+  #  done
     
 	####### Estado cujos banco é analisado após separação em diferentes arquivos
 	
@@ -152,16 +152,16 @@ if [ $process ]; then
         popd
     
 		## Processamento dos dados (prepare_table())
-        echo "generating number of doses for state ${estado} in $PWD folder"
-        Rscript vaccine_functions.R --command prepara_dado --split TRUE --estado $estado --dataBase $lastdate &&
-            rm output/${estado}_PNI_clean.csv
-        echo "done"
+       # echo "generating number of doses for state ${estado} in $PWD folder"
+        #Rscript vaccine_functions.R --command prepara_dado --split TRUE --estado $estado --dataBase $lastdate &&
+        #    rm output/${estado}_PNI_clean.csv
+        #echo "done"
     
 	done
 
-    echo "counting doses for all states"
-    Rscript vacinacao_infantil.R
-    echo "done"
+    #echo "counting doses for all states"
+   # Rscript vacinacao_infantil.R
+    #echo "done"
 
     # limpando arquivos quebrados
     for estado in "${estados_split[@]}"; do
