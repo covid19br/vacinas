@@ -409,8 +409,8 @@ final_pac <- df_pac %>% mutate(muni_pac = factor(muni_pac)) %>% group_by(muni_pa
 
 # Somar colunas com idades 90+ com as colunas 80-89, para tornar 80+
 final_pac2 <- final_pac
-final_pac2[,grep("I12",colnames(final_pac2))] = final_pac2[,grep("I12",colnames(final_pac2))] + final_pac2[,grep("I13",colnames(final_pac2))]
-final_pac2 <- final_pac2[,-grep("I13",colnames(final_pac2))]
+final_pac2[,grep("I11",colnames(final_pac2))] = final_pac2[,grep("I11",colnames(final_pac2))] + final_pac2[,grep("I12",colnames(final_pac2))]
+final_pac2 <- final_pac2[,-grep("I12",colnames(final_pac2))]
 
 # Salvar
 filename <- "output/sipni_muni_residencia.csv.gz"
@@ -436,8 +436,7 @@ final_pac2[,grep("I5",colnames(final_pac2))] = final_pac2[,grep("I5",colnames(fi
 # Idosos
 final_pac2[,grep("I9",colnames(final_pac2))] = final_pac2[,grep("I9",colnames(final_pac2))] + 
   final_pac2[,grep("I10",colnames(final_pac2))] +
-  final_pac2[,grep("I11",colnames(final_pac2))] +
-  final_pac2[,grep("I12",colnames(final_pac2))] 
+  final_pac2[,grep("I11",colnames(final_pac2))]
 
 final_pac2 <- final_pac2[,c(1,grep("I1_|I4_|I5_|I9_",colnames(final_pac2)))]
 
@@ -467,8 +466,8 @@ final_apl <- df_apl %>% mutate(muni_apli = factor(muni_apli)) %>% group_by(muni_
 
 # Agrupar 80-89 e 90+ em 80+
 final_apl2 <- final_apl
-final_apl2[,grep("I12",colnames(final_apl2))] = final_apl2[,grep("I12",colnames(final_apl2))] + final_apl2[,grep("I13",colnames(final_apl2))]
-final_apl2 <- final_apl2[,-grep("I13",colnames(final_apl2))]
+final_apl2[,grep("I11",colnames(final_apl2))] = final_apl2[,grep("I11",colnames(final_apl2))] + final_apl2[,grep("I12",colnames(final_apl2))]
+final_apl2 <- final_apl2[,-grep("I12",colnames(final_apl2))]
 
 filename <- "output/sipni_muni_aplicacao.csv.gz"
 print(paste0("Salvando: ", filename))
@@ -493,8 +492,7 @@ final_apl2[,grep("I5",colnames(final_apl2))] = final_apl2[,grep("I5",colnames(fi
 # Idosos
 final_apl2[,grep("I9",colnames(final_apl2))] = final_apl2[,grep("I9",colnames(final_apl2))] + 
   final_apl2[,grep("I10",colnames(final_apl2))] +
-  final_apl2[,grep("I11",colnames(final_apl2))] +
-  final_apl2[,grep("I12",colnames(final_apl2))] 
+  final_apl2[,grep("I11",colnames(final_apl2))]
 
 final_apl2 <- final_apl2[,c(1,grep("I1_|I4_|I5_|I9_",colnames(final_apl2)))]
 
