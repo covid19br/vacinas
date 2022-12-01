@@ -375,7 +375,7 @@ print(paste0("Data_base: ",data_base))
 files_out <- list.files("dados/")
 estados <- substr(grep("^limpo_dados",files_out, value = T), 24,25)
 
-for(j in estados) {
+for(j in estados[24:26]) {
   print(j)
   contar_doses_municipio(estado = j, data_base = data_base, split = FALSE)
  }
