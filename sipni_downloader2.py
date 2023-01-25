@@ -59,20 +59,23 @@ def check_for_new_file(index_page_address, last_date):
     return False
 
 if __name__ == '__main__':
-    index_page_address1 = "https://opendatasus.saude.gov.br/dataset/covid-19-vacinacao/resource/5093679f-12c3-4d6b-b7bd-07694de54173"
-    index_page_address2 = "https://opendatasus.saude.gov.br/dataset/covid-19-vacinacao/resource/10aed154-04c8-4cf4-b78a-8f0fa1bc5af4"
-    estados1 = ["AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES", "GO", "MA",
-            "MG", "MS", "MT"]
-    estados2 = [ "PA", "PB", "PE", "PI", "PR", "RJ", "RN", "RO",
-            "RR", "RS", "SC", "SE", "SP", "TO"]
+
+    index_pages_estados = [
+        ("https://opendatasus.saude.gov.br/dataset/covid-19-vacinacao/resource/5093679f-12c3-4d6b-b7bd-07694de54173", ["AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES"]),
+        ("https://opendatasus.saude.gov.br/dataset/covid-19-vacinacao/resource/4ae86721-1bcc-47a4-a60d-75874727439b", ["GO", "MA", "MG", "MS", "MT"]),
+        ("https://opendatasus.saude.gov.br/dataset/covid-19-vacinacao/resource/10aed154-04c8-4cf4-b78a-8f0fa1bc5af4", [ "PA", "PB", "PE", "PI", "PR", "RJ", "RN", "RO"]),
+        ("https://opendatasus.saude.gov.br/dataset/covid-19-vacinacao/resource/a5f0bb2a-f6c2-4f28-b3da-bc79462c3774", ["RR", "RS", "SC", "SE", "SP", "TO"]) ]
+
     output_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'dados/')
 
-    data1 = get_date(index_page_address1)
-    data2 = get_date(index_page_address1)
-    if data1 != data2:
-        print("Datas de atualização discordam! Saindo....")
-        sys.exit(1)
-    print(f'data da última atualização: {data1.strftime("%Y-%m-%d")}')
+    data = []
+    for index_page, estados in index_pages_estados:
+        data.append(get_date(index_page))
+    for i in range(1, len(data)):
+        if data[i] != data[i-1]:
+            print("Datas de atualização discordam! Saindo....")
+            sys.exit(1)
+    print(f'data da última atualização: {data[0].strftime("%Y-%m-%d")}')
     if len(sys.argv) == 1:
         print("USO: sipni_downloader [UF1] [UF2] ... | [todas] -dYYYY-mm-dd")
         sys.exit(0)
@@ -85,21 +88,18 @@ if __name__ == '__main__':
         else:
             UFs.append(arg)
     if 'todas' in UFs:
-        UFs = estados1 + estados2
+        UFs = sum([ index_page[1] for index_page in index_pages_estados ], [])
     if data_ant and data1 <= data_ant:
         print("Base não foi atualizada desde a data pedida.")
         sys.exit(2)
     for UF in UFs:
-        if UF in estados1:
-            print(f'=== baixando base de {UF} ===\n')
-            fname = f'dados_{data1.strftime("%Y-%m-%d")}_{UF}.csv'
-            output_file = os.path.join(output_folder, fname)
-            get_UF_file(index_page_address1, UF, output_file)
-        elif UF in estados2:
-            print(f'=== baixando base de {UF} ===\n')
-            fname = f'dados_{data2.strftime("%Y-%m-%d")}_{UF}.csv'
-            output_file = os.path.join(output_folder, fname)
-            get_UF_file(index_page_address2, UF, output_file)
+        for index_page, estados in index_pages_estados:
+            if UF in estados:
+                print(f'=== baixando base de {UF} ===\n')
+                fname = f'dados_{data[0].strftime("%Y-%m-%d")}_{UF}.csv'
+                output_file = os.path.join(output_folder, fname)
+                get_UF_file(index_page, UF, output_file)
+                break
         else:
             print(f'\n   "{UF}" não é uma UF válida\n')
 
