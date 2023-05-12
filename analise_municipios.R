@@ -61,6 +61,8 @@ contar_doses_municipio <- function(estado,
       
       print(paste0(estado, " data succesfully loaded. Preparing data: split #",indice))
       
+      ###### Create log of removed values due to missing data
+      
       df.log <- data.frame(paciente_id = sum(is.na(vacinas$paciente_id)),
                  paciente_dataNascimento = sum(is.na(vacinas$paciente_dataNascimento)),
                  vacina_dataAplicacao = sum(is.na(vacinas$vacina_dataAplicacao)),
@@ -90,7 +92,9 @@ contar_doses_municipio <- function(estado,
         
       }
       
-      vacinas$paciente_id <- factor(vacinas$paciente_id)
+      ###### End of log of removed values due to missing data
+      
+      vacinas$paciente_id <- factor(as.numeric(factor(vacinas$paciente_id)))
       
       vacinas[vacinas == ""] <- NA
       
@@ -108,14 +112,20 @@ contar_doses_municipio <- function(estado,
       
       colnames(vacinas) <- c("id", "nasc", "date","sexo","muni_pac","muni_apli")
       
-      # Filter doses with more than 3 doses and compute age at first dose  
-      
+      # Filter ids with more than 3 doses and compute age at first dose  
       vacinas <- vacinas %>% 
         group_by(id) %>% 
         mutate(nasc = min(nasc, na.rm = T)) %>%
         ungroup() %>%
-        mutate(idade = as.numeric(date - nasc) %/% 365.25) %>% 
-        select(-nasc) %>%
+        mutate(idade = as.numeric(date - nasc) %/% 365.25,
+               age_days = date - nasc)  %>% 
+        select(-nasc)
+      
+      six_months = vacinas %>% filter(age_days <= 6*31) %>% select(id)
+      
+      vacinas <- vacinas %>%
+        anti_join(six_months, by = "id") %>%
+        select(-age_days) %>%
         mutate(agegroup = factor(cut(idade,
                                      breaks = c(0,3,5,12,18,seq(30,90,10),Inf),
                                      #c(seq(0,90,10),Inf),
@@ -216,6 +226,7 @@ contar_doses_municipio <- function(estado,
     
     print(paste0(estado, " data succesfully loaded. Preparing data... 1"))
     
+    ###### Create log of removed values due to missing data
     df.log <- data.frame(paciente_id = sum(is.na(vacinas$paciente_id)),
                          paciente_dataNascimento = sum(is.na(vacinas$paciente_dataNascimento)),
                          vacina_dataAplicacao = sum(is.na(vacinas$vacina_dataAplicacao)),
@@ -244,10 +255,14 @@ contar_doses_municipio <- function(estado,
       write.csv(df.log, file = paste0(output_folder, "log/", filename))
       
     }
+    ###### End of log of removed values due to missing data
     
-    vacinas$paciente_id <- factor(vacinas$paciente_id)
+    vacinas$paciente_id <- factor(as.numeric(factor(vacinas$paciente_id)))
     
     vacinas[vacinas == ""] <- NA
+    
+    # Clear cache
+    gc()
 
     # Clean Data
     vacinas <- vacinas %>% 
@@ -264,15 +279,20 @@ contar_doses_municipio <- function(estado,
     colnames(vacinas) <- c("id", "nasc", "date","sexo","muni_pac","muni_apli")
   
     # Filter ids with more than 3 doses and compute age at first dose  
-    
     vacinas <- vacinas %>% 
-
-            group_by(id) %>% 
+      group_by(id) %>% 
       mutate(nasc = min(nasc, na.rm = T)) %>%
       ungroup() %>%
-      mutate(idade = as.numeric(date - nasc) %/% 365.25) %>% 
-      select(-nasc) %>%
-      mutate(agegroup = factor(cut(idade, 
+      mutate(idade = as.numeric(date - nasc) %/% 365.25,
+             age_days = date - nasc)  %>% 
+      select(-nasc)
+    
+    six_months = vacinas %>% filter(age_days <= 6*31) %>% select(id)
+    
+    vacinas <- vacinas %>%
+    anti_join(six_months, by = "id") %>%
+    select(-age_days) %>%
+    mutate(agegroup = factor(cut(idade, 
                                    c(0,3,5,12,18,seq(30,90,10),Inf),
                                    #c(seq(0,90,10),Inf),
                                    include.lowest = T, 
@@ -317,7 +337,7 @@ contar_doses_municipio <- function(estado,
     print(paste0("Salvando: ",filename))
     fwrite(vac_muni_pac, file = filename)
     
-    rm(vac_muni_pac);gc()
+    rm(vac_muni_pac, six_months);gc()
     
     vac_muni_apli <- vacinas %>%
       select(muni_apli, doses, agegroup, sexo, SE) %>%
