@@ -125,15 +125,7 @@ if [ $process ]; then
 
     ####### Estados cujos bancos são analisados sem separação em diferentes arquivos
     estados=("AC" "AL" "AM" "AP" "BA" "CE" "DF" "ES" "GO" "MA" "MG" "MS" "MT" "PA" "PB" "PE" "PI" "PR" "RJ" "RN" "RO" "RR" "RS" "SC" "SE" "TO")
-
-    echo "preparing data for states that doesn't split"
-    for estado in "${estados[@]}"; do
-          Rscript vaccine_functions.R --command prepara_dado --estado $estado --dataBase $lastdate &&
-          Rscript vaccine_functions.R --command prepara_cobertura --estado $estado --dataBase $lastdate &&
-         # rm output/${estado}_PNI_clean.csv
-        echo "state ${estado} done"
-    done
-    
+   
 	####### Estado cujos banco é analisado após separação em diferentes arquivos
 	
     for estado in "${estados_split[@]}"; do
