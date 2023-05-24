@@ -122,7 +122,7 @@ prepare_table <- function(estado,
       
       todas_vacinas$vacina_codigo[todas_vacinas$vacina_codigo == 89] <- 85
       todas_vacinas$vacina_codigo[todas_vacinas$vacina_codigo == 98] <- 86
-      todas_vacinas$vacina_codigo[todas_vacinas$vacina_codigo == 99] <- 87
+      todas_vacinas$vacina_codigo[todas_vacinas$vacina_codigo %in% c(99,102,103)] <- 87
       
       # Remove registros duplicados
       before_rem_dupli = nrow(todas_vacinas)
@@ -330,7 +330,7 @@ prepare_table <- function(estado,
     # Atenção: Se for utilizado no banco de dados um novo código para vacina (campo vacina_codigo), esta parte do código de verá ser atualizada
     todas_vacinas$vacina_codigo[todas_vacinas$vacina_codigo == 89] <- 85
     todas_vacinas$vacina_codigo[todas_vacinas$vacina_codigo == 98] <- 86
-    todas_vacinas$vacina_codigo[todas_vacinas$vacina_codigo == 99] <- 87
+    todas_vacinas$vacina_codigo[todas_vacinas$vacina_codigo %in% c(99,102,103)] <- 87
     
     # Remove registros duplicados
     
