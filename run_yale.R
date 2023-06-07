@@ -35,7 +35,7 @@ for(i in files_pac) {
                               "month" = "Date",
                               "vacina" = "integer",
                               "n" = "integer")) %>% data.frame() %>%
-    filter(doses = DOSE)
+    filter(doses == DOSE)
   
   df_pac <- bind_rows(df_pac, pac)
   rm(pac);gc()
@@ -77,7 +77,7 @@ for(i in files_apl) {
                               "month" = "Date",
                               "vacina" = "integer",
                               "n" = "integer")) %>% data.frame() %>%
-    filter(doses = DOSE)
+    filter(doses == DOSE)
   
   df_apl <- bind_rows(df_apl, apl)
   rm(apl);gc()
