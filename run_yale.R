@@ -23,42 +23,42 @@ files_apl <- grep("apli_yale", files, value = T)
 
 DOSES = c("D1","D2","D3","D4","D5")
 
-for(DOSE in DOSES){
-
-df_pac <- data.frame()
-for(i in files_pac) {
-  print(paste0(i,"_",DOSE))
-  pac <- fread(paste0("output/municipios/",i), 
-               colClasses = c("muni_pac" = "character",
-                              "doses" = "factor",
-                              "agegroup" = "factor",
-                              "month" = "Date",
-                              "vacina" = "integer",
-                              "n" = "integer")) %>% data.frame() %>%
-    filter(doses == DOSE)
-  
-  df_pac <- bind_rows(df_pac, pac)
-  rm(pac);gc()
-}
-
-# Corrigir código de cidades satélite em Brasília
-df_pac$muni_pac[grepl("^53",df_pac$muni_pac)] <- "530010"
-
-# Agrupar resultados para todos os municípios
-final_pac <- df_pac %>% 
-  mutate(muni_pac = factor(muni_pac)) %>% 
-  group_by(muni_pac, agegroup, month, vacina) %>% 
-  summarise(n = sum(n, na.rm =T)) %>%
-  ungroup() %>%
-  mutate(vacina = factor(vacina, levels = 85:88, labels = c("AZ","CV","PF","JS")))
-
-# Salvar
-filename <- paste0("output/sipni_muni_residencia_yale_",DOSE,".csv.gz")
-print(paste0("Salvando: ", filename))
-write.csv.gz(final_pac, file = filename)
-
-rm(final_pac, df_pac);gc()
-}
+# for(DOSE in DOSES){
+# 
+# df_pac <- data.frame()
+# for(i in files_pac) {
+#   print(paste0(i,"_",DOSE))
+#   pac <- fread(paste0("output/municipios/",i), 
+#                colClasses = c("muni_pac" = "character",
+#                               "doses" = "factor",
+#                               "agegroup" = "factor",
+#                               "month" = "Date",
+#                               "vacina" = "integer",
+#                               "n" = "integer")) %>% data.frame() %>%
+#     filter(doses == DOSE)
+#   
+#   df_pac <- bind_rows(df_pac, pac)
+#   rm(pac);gc()
+# }
+# 
+# # Corrigir código de cidades satélite em Brasília
+# df_pac$muni_pac[grepl("^53",df_pac$muni_pac)] <- "530010"
+# 
+# # Agrupar resultados para todos os municípios
+# final_pac <- df_pac %>% 
+#   mutate(muni_pac = factor(muni_pac)) %>% 
+#   group_by(muni_pac, agegroup, month, vacina) %>% 
+#   summarise(n = sum(n, na.rm =T)) %>%
+#   ungroup() %>%
+#   mutate(vacina = factor(vacina, levels = 85:88, labels = c("AZ","CV","PF","JS")))
+# 
+# # Salvar
+# filename <- paste0("output/sipni_muni_residencia_yale_",DOSE,".csv.gz")
+# print(paste0("Salvando: ", filename))
+# write.csv.gz(final_pac, file = filename)
+# 
+# rm(final_pac, df_pac);gc()
+# }
 
 
 ###
@@ -71,7 +71,7 @@ for(i in files_apl) {
   print(paste0(i,"_",DOSE))
   
   apl <- fread(paste0("output/municipios/",i), 
-               colClasses = c("muni_pac" = "character",
+               colClasses = c("muni_apli" = "character",
                               "doses" = "factor",
                               "agegroup" = "factor",
                               "month" = "Date",
